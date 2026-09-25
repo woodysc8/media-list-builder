@@ -1,0 +1,27 @@
+{
+  "name": "media-list-builder",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc --noEmit",
+    "start": "tsx src/server.ts",
+    "reset:local": "tsx src/reset-local.ts",
+    "enrich:dry-run": "tsx src/enrichment-dry-run.ts",
+    "test:media": "tsx src/media-canonical.test.ts"
+  },
+  "dependencies": {
+    "csv-parse": "^5.5.6",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "googleapis": "^140.0.1",
+    "multer": "^1.4.5-lts.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/multer": "^1.4.12",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.3"
+  }
+}

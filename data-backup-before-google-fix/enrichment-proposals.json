@@ -1,0 +1,3900 @@
+[
+  {
+    "proposalId": "ENR-6b9b8359",
+    "currentName": "Thomas Lee",
+    "currentOutlet": "Wealth Solutions Report",
+    "reporterName": "Thomas Lee",
+    "outlet": "Wealth Solutions Report",
+    "email": null,
+    "beats": [
+      "Wealth Management",
+      "M&A",
+      "Financial Advisors",
+      "RIA",
+      "Fintech",
+      "Wealthtech",
+      "Asset Management",
+      "Investments",
+      "Retirement",
+      "Financial Planning",
+      "Banking",
+      "Private Equity",
+      "Venture Capital",
+      "Insurance",
+      "Technology",
+      "Compliance",
+      "Regulation",
+      "Practice Management",
+      "Advisor Technology",
+      "General Business"
+    ],
+    "beatDescription": "",
+    "reporterType": "journalist",
+    "confidence": 0.9,
+    "status": "verified",
+    "sources": [
+      {
+        "url": "https://www.wealthsolutionsreport.com/author/thomas-lee",
+        "title": "Thomas Lee - Wealth Solutions Report",
+        "sourceType": "publication"
+      },
+      {
+        "url": "https://www.wealthsolutionsreport.com/author/thomas-lee/page/4",
+        "title": "Thomas Lee - Wealth Solutions Report (Page 4)",
+        "sourceType": "publication"
+      },
+      {
+        "url": "https://www.wealthsolutionsreport.com/about-us",
+        "title": "About Us",
+        "sourceType": "publication"
+      },
+      {
+        "url": "https://en.wikipedia.org/wiki/Thomas_Lee_(analyst)",
+        "title": "Thomas Lee (analyst) - Wikipedia",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.newedgewealth.com/team/thomas-lee",
+        "title": "Thomas Lee - NewEdge Wealth",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.amazon.com/Thomas-Lee/e/B07YCTRSJG/ref=dp_byline_cont_ebooks_1",
+        "title": "Amazon.com: Thomas Lee: books, biography, latest update",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://active-voices.com/about",
+        "title": "About Thomas Lee – Active Voice Editorial Services",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.youtube.com/watch?v=BDnLPC4FcrQ",
+        "title": "Rebuilding Empires with Thomas Lee",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/in/thomas-lee-09b8a03",
+        "title": "Thomas Lee",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.linkedin.com/in/thomas-lee-150b761",
+        "title": "Thomas Lee",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.linkedin.com/in/thomas-lee-8aa658120",
+        "title": "Thomas Lee",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://cmtassociation.org/presenter/thomas-lee",
+        "title": "Thomas J. Lee, CFA - CMT Association",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://wublock.substack.com/p/who-is-tom-lee-from-wall-street-star",
+        "title": "Who Is Tom Lee? From Wall Street Star to Ethereum MicroStrategy Architect",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://members.cfachicago.org/CFAC/CFAC/Event_Display.aspx?EventKey=051122",
+        "title": "Distinguished Speaker Series: Thomas J. Lee, CFA",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://fundstrat.com",
+        "title": "Fundstrat – Market Strategy & Sector Research",
+        "sourceType": "other"
+      }
+    ],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "rejected",
+    "authoritativeSource": true,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-14T17:05:02.673Z",
+    "reporterId": "REP-000001"
+  },
+  {
+    "proposalId": "ENR-484220ff",
+    "currentName": "n/a",
+    "currentOutlet": "PYMNTS",
+    "reporterName": "n/a",
+    "outlet": "PYMNTS",
+    "email": null,
+    "beats": [],
+    "beatDescription": "",
+    "reporterType": "placeholder",
+    "confidence": 0,
+    "status": "placeholder",
+    "sources": [],
+    "reasoningSummary": "The coverage record contains a placeholder reporter value and will not become an individual reporter.",
+    "approvalStatus": "rejected",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-14T17:05:02.683Z"
+  },
+  {
+    "proposalId": "ENR-54b60a72",
+    "currentName": "Michael Kitces",
+    "currentOutlet": "Nerds Eye View",
+    "reporterName": "Michael Kitces",
+    "outlet": "Nerds Eye View",
+    "email": null,
+    "beats": [
+      "Financial Advisors",
+      "RIA",
+      "Wealth Management",
+      "Financial Planning",
+      "Practice Management",
+      "Advisor Technology",
+      "Fintech"
+    ],
+    "beatDescription": "",
+    "reporterType": "journalist",
+    "confidence": 0.9,
+    "status": "needs_review",
+    "sources": [
+      {
+        "url": "https://www.whitecoatinvestor.com/michael-kitces-podcast-124",
+        "title": "Financial Advisors: The Good, The Bad, and The Ugly with Michael Kitces | White Coat Investor",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://x.com/MichaelKitces?lang=en",
+        "title": "MichaelKitces",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://informaconnect.com/edge/speakers/michael-kitces",
+        "title": "Kitces.com | Wealth Management EDGE Speaker",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.kitces.com",
+        "title": "Kitces.com - Advancing Knowledge in Financial Planning",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/in/michaelkitces",
+        "title": "Michael Kitces - Chief Financial Planning Nerd",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://en.wikipedia.org/wiki/Michael_Kitces",
+        "title": "Michael Kitces - Wikipedia",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.amazon.com/stores/author/B00L1J0CGQ",
+        "title": "Amazon.com: Michael Kitces: books, biography, latest update",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.kitces.com/media",
+        "title": "Media Details For Michael Kitces",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.bigspeak.com/speakers/michael-kitces",
+        "title": "Keynote Speaker Michael Kitces Speaking Fee and Information",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/posts/michaelkitces_2025-highlights-the-top-22-nerds-eye-view-activity-7408898225631518722-UL8h",
+        "title": "2025 Highlights – The Top 22 Nerd’s Eye View Blog Posts You Might Have Missed | Michael Kitces",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.linkedin.com/posts/michaelkitces_is-complexity-in-financial-planning-necessary-activity-7328821533383000066-bl16",
+        "title": "How young advisors can balance complexity and simplicity | Michael Kitces posted on the topic | LinkedIn",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.linkedin.com/company/kitces",
+        "title": "Kitces.com - Advancing Knowledge in Financial Planning to Help Real Financial Advisors Be Better and More Successful",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.financial-planning.com/author/michael-kitces-iag918",
+        "title": "Michael Kitces - Head of Planning Strategy",
+        "sourceType": "other"
+      }
+    ],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "rejected",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-14T17:05:54.934Z",
+    "reporterId": "REP-000003"
+  },
+  {
+    "proposalId": "ENR-e9cae7c1",
+    "currentName": "Jason Pereira",
+    "currentOutlet": "Fintech Impact",
+    "reporterName": "Jason Pereira",
+    "outlet": "Fintech Impact",
+    "email": null,
+    "beats": [
+      "Wealth Management",
+      "Financial Advisors",
+      "Fintech",
+      "Wealthtech",
+      "Financial Planning",
+      "Practice Management",
+      "Advisor Technology",
+      "Insurance"
+    ],
+    "beatDescription": "",
+    "reporterType": "journalist",
+    "confidence": 0.9,
+    "status": "needs_review",
+    "sources": [
+      {
+        "url": "https://fintechlabs.com/fintech-podcast-of-the-day",
+        "title": "Fintech Podcast of the Day: Jason Pereira’s Fintech Impact | Fintech Labs",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.etftrends.com/exchange-an-etf-experience/jason-pereira-joins-an-exciting-roster-of-exchange-keynotes",
+        "title": "Jason Pereira Join an Exciting Roster of Exchange Keynotes",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://open.spotify.com/show/0BVcA7FrEdRTE8UBAw8FjN",
+        "title": "Fintech Impact | Podcast on Spotify",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://jasonpereira.ca",
+        "title": "JasonPereira.ca",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://jasonpereira.ca/the-fintech-impact-podcast-jason-pereira",
+        "title": "The Fintech Impact Podcast — JasonPereira.ca",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://iafpsymposium.ca/2022/speaker/jason-pereira",
+        "title": "JASON PEREIRA | 2022 IAFP Symposium JASON PEREIRA JASON PEREIRA JASON PEREIRA JASON PEREIRA",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.youtube.com/watch?v=oAAM5ALubSU",
+        "title": "Jason Pereira: Expert Financial Planning | Rational Reminder 354",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://jasonpereira.substack.com",
+        "title": "This week in AI for Financial Advisors | Jason Pereira | Substack",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://x.com/jasonpereira",
+        "title": "Jason Pereira (@jasonpereira) / X",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://shows.acast.com/fintechimpact/about",
+        "title": "Fintech Impact<!-- --> - Hosted by Jason Pereira",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://informaconnect.com/edge/speakers/jason-pereira-cfp",
+        "title": "Jason Pereira, CFP - Woodgate Financial | Wealth Management EDGE Speaker",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://ca.linkedin.com/company/fintech-impact-podcast",
+        "title": "The Fintech Impact Podcast",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://rationalreminder.ca/podcast/354",
+        "title": "Episode 354 - Jason Pereira: Expert Financial Planning — Rational Reminder",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://music.amazon.com/podcasts/ebb84c1c-4368-4c90-ad76-032078f15fe6/episodes/bde31732-470f-4bd0-bb90-5ac96d580531/the-wealthy-barber-podcast-29-%E2%80%94-jason-pereira-the-evolution-of-financial-advice-in-canada",
+        "title": "#29 — Jason Pereira: The Evolution of Financial Advice in Canada",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.fpassociation.ca/members/xmebKa6Q",
+        "title": "Jason Pereira | FPAC Member",
+        "sourceType": "other"
+      }
+    ],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "approved",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-14T17:05:54.937Z",
+    "reporterId": "REP-000004"
+  },
+  {
+    "proposalId": "ENR-1308cac8",
+    "currentName": "Hayley Cuccinello",
+    "currentOutlet": "CNBC",
+    "reporterName": "Hayley Cuccinello",
+    "outlet": "CNBC",
+    "email": null,
+    "beats": [
+      "Wealth Management",
+      "Private Equity",
+      "Investments",
+      "Fintech",
+      "Technology",
+      "Venture Capital",
+      "Wealthtech",
+      "Asset Management",
+      "General Business"
+    ],
+    "beatDescription": "",
+    "reporterType": "journalist",
+    "confidence": 0.9,
+    "status": "verified",
+    "sources": [
+      {
+        "url": "https://www.cnbc.com/hayley-cuccinello",
+        "title": "Hayley Cuccinello - CNBC",
+        "sourceType": "publication"
+      },
+      {
+        "url": "https://talkingbiznews.com/media-news/cnbc-hires-cuccinello-to-cover-wealth",
+        "title": "CNBC hires Cuccinello to cover wealth - Talking Biz News",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/in/hayleycuccinello",
+        "title": "Hayley Cuccinello - CNBC Wealth Reporter - LinkedIn",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.helpareporter.com/journalist/hayley-cuccinello",
+        "title": "Hayley Cuccinello - Senior Finance Reporter at Business Insider | HARO",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://x.com/HCuccinello",
+        "title": "Hayley Cuccinello (@HCuccinello) / Posts / X - Twitter",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://me.sh/profile/hayley-cuccinello",
+        "title": "Hayley Cuccinello - LinkedIn, Twitter, Facebook",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.businessinsider.com/author/hayley-cuccinello",
+        "title": "Hayley Cuccinello - Business Insider",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/posts/ronalddiamond_more-than-4000-family-offices-now-allocate-activity-7368629243838156801-IvgN",
+        "title": "Family offices surge in private markets, outpacing others. | Ronald Diamond posted on the topic | LinkedIn",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.linkedin.com/posts/hayleycuccinello_new-year-new-role-after-four-years-at-business-activity-7284988543532204032-JldX",
+        "title": "New year, new role: After four years at Business Insider, I am delighted to join CNBC’s new vertical Inside Wealth. I’ll be covering how the rich build and spend their fortunes, focusing on family… | Hayley Cuccinello | 109 comments",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.linkedin.com/posts/robertfrank-cnbc_familyoffice-familyoffices-investing-activity-7331645771596840960-E58W",
+        "title": "Family offices favor stocks over private equity | Robert Frank posted on the topic | LinkedIn",
+        "sourceType": "linkedin"
+      }
+    ],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "approved",
+    "authoritativeSource": true,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-14T17:06:37.862Z",
+    "reporterId": "REP-000005"
+  },
+  {
+    "proposalId": "ENR-1829cd68",
+    "currentName": "Davis Janowski",
+    "currentOutlet": "Wealth Management",
+    "reporterName": "Davis Janowski",
+    "outlet": "Wealth Management",
+    "email": null,
+    "beats": [
+      "Wealth Management",
+      "Fintech",
+      "Wealthtech",
+      "Advisor Technology",
+      "Technology"
+    ],
+    "beatDescription": "",
+    "reporterType": "journalist",
+    "confidence": 0.9,
+    "status": "verified",
+    "sources": [
+      {
+        "url": "https://www.wealthmanagement.com/author/davis-janowski",
+        "title": "Davis Janowski | Wealth Management",
+        "sourceType": "publication"
+      },
+      {
+        "url": "https://informaconnect.com/edge/speakers/davis-janowski",
+        "title": "Davis Janowski - Wealth Management Group | Wealth Management EDGE Speaker",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.youtube.com/watch?v=NlURFcnX_ZE",
+        "title": "The WealthStack Podcast: 2023 WealthTech Outlook with Davis Janowski",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.wealthfront.com/blog/author/davis",
+        "title": "Davis Janowski, Author at Wealthfront Blog",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.impruve.com/knowledge-hub/impruve-named-in-wealth-managements-ai-moment",
+        "title": "Impruve Named in Wealth Management’s AI Moment: A Recap of Davis Janowski’s Industry Column — Impruve",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://en.wikipedia.org/wiki/Davis,_California",
+        "title": "Davis, California - Wikipedia",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.davisenterprise.com",
+        "title": "davisenterprise.com | The Davis Enterprise",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.ucdavis.edu",
+        "title": "UC Davis",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.davisokla.org",
+        "title": "City of Davis",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.daviswolves.org",
+        "title": "Davis Public Schools - Home",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/posts/davisjanowski_nuggets-mined-from-orions-inaugural-investor-activity-7293701546523983872-2_hi",
+        "title": "Nuggets Mined From Orion's Inaugural Investor Survey | Davis Janowski | 11 comments",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://wealth-stack.blubrry.net/2026/01/12/from-franken-stacks-to-ai-agents-the-annual-wealthtech-outlook-with-davis-janowski",
+        "title": "From Franken-Stacks to AI Agents: The Annual WealthTech Outlook with Davis Janowski – The WealthStack Podcast",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/in/davisjanowski",
+        "title": "Davis Janowski",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.investmentnews.com/authors/davisd-janowski",
+        "title": "Davis Janowski - InvestmentNews",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.financial-planning.com/author/davis-janowski",
+        "title": "Davis Janowski - Independent fintech consultant | Financial Planning",
+        "sourceType": "other"
+      }
+    ],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "approved",
+    "authoritativeSource": true,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-14T17:06:37.865Z",
+    "reporterId": "REP-000006"
+  },
+  {
+    "proposalId": "ENR-c2beb8c9",
+    "currentName": "n/a",
+    "currentOutlet": "BusinessWire",
+    "reporterName": "n/a",
+    "outlet": "BusinessWire",
+    "email": null,
+    "beats": [],
+    "beatDescription": "",
+    "reporterType": "placeholder",
+    "confidence": 0,
+    "status": "placeholder",
+    "sources": [],
+    "reasoningSummary": "The coverage record contains a placeholder reporter value and will not become an individual reporter.",
+    "approvalStatus": "rejected",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-14T17:07:36.607Z"
+  },
+  {
+    "proposalId": "ENR-5a8aa680",
+    "currentName": "Alec Rich",
+    "currentOutlet": "Citywire RIA",
+    "reporterName": "Alec Rich",
+    "outlet": "Citywire RIA",
+    "email": null,
+    "beats": [],
+    "beatDescription": "",
+    "reporterType": "journalist",
+    "confidence": 0.9,
+    "status": "needs_review",
+    "sources": [
+      {
+        "url": "https://www.alecrich.com/writing",
+        "title": "WRITING — Alec Rich",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://x.com/alecrich01",
+        "title": "Alec Rich (@alecrich01) / Posts / X",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/in/alec-rich-368016175",
+        "title": "Alec Rich - Reporter at Citywire",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://citywire.com/ria/author/61818c6d-be12-40f4-8721-fd58e38602c6",
+        "title": "Alec Rich - RIA",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://citywire.com/wealth-manager/author/61818c6d-be12-40f4-8721-fd58e38602c6",
+        "title": "Latest News - Alec Rich",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.youtube.com/watch?v=KdimhmKxqjo",
+        "title": "Alec Rich III Selectboard Candidate Introduction",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://muckrack.com/alec-rich",
+        "title": "Alec Rich's Profile | Citywire USA Journalist",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/company/citywireusa",
+        "title": "Citywire USA - Breaking news, analysis & insights for RIAs, Professional Mutual Fund Buyers & Investors.",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.pricefm.com/meet-alec",
+        "title": "Meet Alec",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.alecu.org/services/investments/meet-alec-wealth-management-team",
+        "title": "Meet The ALEC Wealth Management Team | ALEC",
+        "sourceType": "other"
+      }
+    ],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "approved",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-14T17:07:36.607Z",
+    "reporterId": "REP-000008"
+  },
+  {
+    "proposalId": "ENR-3ecae3ac",
+    "currentName": "Leo Almazora",
+    "currentOutlet": "InvestmentNews",
+    "reporterName": "Leo Almazora",
+    "outlet": "InvestmentNews",
+    "email": null,
+    "beats": [
+      "Wealth Management",
+      "Financial Advisors",
+      "RIA",
+      "Fintech",
+      "Wealthtech",
+      "Asset Management",
+      "Investments",
+      "Retirement",
+      "Financial Planning",
+      "Private Equity",
+      "Practice Management",
+      "Advisor Technology",
+      "Compliance",
+      "Regulation",
+      "General Business"
+    ],
+    "beatDescription": "",
+    "reporterType": "journalist",
+    "confidence": 0.9,
+    "status": "verified",
+    "sources": [
+      {
+        "url": "https://www.investmentnews.com/authors/leo-almazora",
+        "title": "Leo Almazora",
+        "sourceType": "publication"
+      },
+      {
+        "url": "https://www.wealthprofessional.ca/authors/leo-almazora",
+        "title": "Leo Almazora",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.investmentnews.com/ria-news/meet-investmentnews-5-star-financial-planners-for-2026-going-beyond-portfolios/266278",
+        "title": "Meet InvestmentNews' 5-Star Financial Planners for 2026: Going beyond portfolios - InvestmentNews",
+        "sourceType": "publication"
+      },
+      {
+        "url": "https://www.investmentnews.com/practice-management/how-one-ria-firm-is-redefining-professional-development-for-advisors/262465",
+        "title": "How one RIA firm is redefining professional development ...",
+        "sourceType": "publication"
+      },
+      {
+        "url": "https://www.investmentnews.com/authors",
+        "title": "Authors - InvestmentNews",
+        "sourceType": "publication"
+      },
+      {
+        "url": "https://ph.linkedin.com/in/leo-almazora-82b65a7a",
+        "title": "Leo Almazora - US Senior Journalist at Key Media - LinkedIn",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.linkedin.com/posts/leo-almazora-82b65a7a_why-responsible-investing-conversations-have-activity-7156416967749361664-nkq_",
+        "title": "Leo Almazora's Post - LinkedIn",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.investmentnews.com/authors/leo-almazora?page=123",
+        "title": "Leo Almazora - InvestmentNews",
+        "sourceType": "publication"
+      },
+      {
+        "url": "https://www.linkedin.com/posts/leo-almazora-82b65a7a_how-vanguards-new-bond-etf-model-pitch-aims-activity-7462241315146092544-DaSX",
+        "title": "Advisors Seek Scalable Solutions Without Sacrificing Trust - LinkedIn",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.linkedin.com/posts/leo-almazora-82b65a7a_investmentnews-looks-back-on-the-top-stories-activity-7407169381140455425-ZirI",
+        "title": "InvestmentNews looks back on the top stories of 2025 | Leo Almazora",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.investmentnews.com/authors/leo-almazora?page=238",
+        "title": "Leo Almazora - InvestmentNews",
+        "sourceType": "publication"
+      },
+      {
+        "url": "https://www.investmentnews.com/alternatives/advisors-lean-on-private-markets-as-volatility-rattles-public-portfolios/266214",
+        "title": "Advisors lean on private markets as volatility rattles public portfolios - InvestmentNews",
+        "sourceType": "publication"
+      }
+    ],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "approved",
+    "authoritativeSource": true,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-14T17:08:02.285Z",
+    "reporterId": "REP-000009"
+  },
+  {
+    "proposalId": "ENR-aa38bdc8",
+    "currentName": "n/a",
+    "currentOutlet": "Planadviser",
+    "reporterName": "n/a",
+    "outlet": "Planadviser",
+    "email": null,
+    "beats": [],
+    "beatDescription": "",
+    "reporterType": "placeholder",
+    "confidence": 0,
+    "status": "placeholder",
+    "sources": [],
+    "reasoningSummary": "The coverage record contains a placeholder reporter value and will not become an individual reporter.",
+    "approvalStatus": "rejected",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-14T17:08:02.286Z"
+  },
+  {
+    "proposalId": "ENR-32d13e2f",
+    "currentName": "John Manganaro",
+    "currentOutlet": "ThinkAdvisor",
+    "reporterName": "John Manganaro",
+    "outlet": "ThinkAdvisor",
+    "email": null,
+    "beats": [
+      "Retirement",
+      "Financial Planning",
+      "Practice Management",
+      "Regulation",
+      "Compliance",
+      "Technology",
+      "General Business"
+    ],
+    "beatDescription": "",
+    "reporterType": "journalist",
+    "confidence": 0.9,
+    "status": "verified",
+    "sources": [
+      {
+        "url": "https://www.thedailyupside.com/author/john-manganaro",
+        "title": "John Manganaro, Author at The Daily Upside",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.bonterratech.com/leadership/john-manganaro",
+        "title": "John Manganaro",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.thinkadvisor.com/author/profile/john-manganaro",
+        "title": "John Manganaro",
+        "sourceType": "publication"
+      },
+      {
+        "url": "https://www.brokerhunter.com/pages/40179-7-flaws-of-modern-financial-planning-blanchett-by-john-manganaro-thinkadvisor",
+        "title": "7 Flaws of Modern Financial Planning: Blanchett By John ...",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.youtube.com/watch?v=NKjeruBjJDE",
+        "title": "How Retirement Planning has Changed featuring John ...",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.merriam-webster.com/dictionary/john",
+        "title": "JOHN Definition & Meaning",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://bible.usccb.org/bible/john/0",
+        "title": "John, THE GOSPEL ACCORDING TO JOHN - Daily Readings",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://en.wikipedia.org/wiki/Gospel_of_John",
+        "title": "Gospel of John",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.nationalshrine.org/blog/6-things-you-should-know-about-st-john-the-apostle",
+        "title": "6 Things You Should Know about St. John the Apostle",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.biblegateway.com/passage?search=John+1&version=NIV",
+        "title": "John 1 NIV - The Word Became Flesh - In the",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/posts/davidhamiltonjr_from-harvard-law-to-high-net-worth-advisor-activity-7034254244622831616-iG4u",
+        "title": "I had the privilege of speaking with John Manganaro from Think Advisor to discuss my journey in the financial service industry and how it continues to evolve. During our conversation, I also shared… | David Hamilton",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.linkedin.com/in/john-manganaro-8987441b",
+        "title": "John Manganaro",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.linkedin.com/in/johnmanganaro",
+        "title": "John Manganaro",
+        "sourceType": "linkedin"
+      }
+    ],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "approved",
+    "authoritativeSource": true,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-14T17:08:31.806Z",
+    "reporterId": "REP-000012"
+  },
+  {
+    "proposalId": "ENR-3aca8399",
+    "currentName": "n/a",
+    "currentOutlet": "Fintech Global",
+    "reporterName": "n/a",
+    "outlet": "Fintech Global",
+    "email": null,
+    "beats": [],
+    "beatDescription": "",
+    "reporterType": "placeholder",
+    "confidence": 0,
+    "status": "placeholder",
+    "sources": [],
+    "reasoningSummary": "The coverage record contains a placeholder reporter value and will not become an individual reporter.",
+    "approvalStatus": "rejected",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-14T17:08:31.807Z"
+  },
+  {
+    "proposalId": "ENR-2a464abd",
+    "currentName": "n/a",
+    "currentOutlet": "Tech Intel Pro",
+    "reporterName": "n/a",
+    "outlet": "Tech Intel Pro",
+    "email": null,
+    "beats": [],
+    "beatDescription": "",
+    "reporterType": "placeholder",
+    "confidence": 0,
+    "status": "placeholder",
+    "sources": [],
+    "reasoningSummary": "The coverage record contains a placeholder reporter value and will not become an individual reporter.",
+    "approvalStatus": "rejected",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-14T17:09:10.767Z"
+  },
+  {
+    "proposalId": "ENR-bc1a968f",
+    "currentName": "n/a",
+    "currentOutlet": "Wealth Solutions Report",
+    "reporterName": "n/a",
+    "outlet": "Wealth Solutions Report",
+    "email": null,
+    "beats": [],
+    "beatDescription": "",
+    "reporterType": "placeholder",
+    "confidence": 0,
+    "status": "placeholder",
+    "sources": [],
+    "reasoningSummary": "The coverage record contains a placeholder reporter value and will not become an individual reporter.",
+    "approvalStatus": "rejected",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-14T17:09:10.767Z"
+  },
+  {
+    "proposalId": "ENR-057702d8",
+    "currentName": "n/a",
+    "currentOutlet": "Digital Wealth News",
+    "reporterName": "n/a",
+    "outlet": "Digital Wealth News",
+    "email": null,
+    "beats": [],
+    "beatDescription": "",
+    "reporterType": "placeholder",
+    "confidence": 0,
+    "status": "placeholder",
+    "sources": [],
+    "reasoningSummary": "The coverage record contains a placeholder reporter value and will not become an individual reporter.",
+    "approvalStatus": "rejected",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-14T17:09:10.767Z"
+  },
+  {
+    "proposalId": "ENR-e54b2cb2",
+    "currentName": "Larry Roth",
+    "currentOutlet": "Wealth Solutions Report",
+    "reporterName": "Larry Roth",
+    "outlet": "Wealth Solutions Report",
+    "email": null,
+    "beats": [
+      "Wealth Management",
+      "Financial Advisors",
+      "RIA",
+      "Fintech",
+      "Wealthtech",
+      "Asset Management",
+      "Investments",
+      "M&A",
+      "Private Equity",
+      "Practice Management",
+      "General Business"
+    ],
+    "beatDescription": "",
+    "reporterType": "journalist",
+    "confidence": 0.9,
+    "status": "verified",
+    "sources": [
+      {
+        "url": "https://www.linkedin.com/company/wealth-solutions-report",
+        "title": "Wealth Solutions Report - Bringing you the best content from wealth management industry experts",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.wealthsolutionsreport.com/author/larry-roth",
+        "title": "Larry Roth - Wealth Solutions Report",
+        "sourceType": "publication"
+      },
+      {
+        "url": "https://www.wealthsolutionsreport.com/writers",
+        "title": "Writers",
+        "sourceType": "publication"
+      },
+      {
+        "url": "https://www.wealthsolutionsreport.com/about-us",
+        "title": "About Us",
+        "sourceType": "publication"
+      },
+      {
+        "url": "https://www.wealthsolutionsreport.com/celebrating-five-years-and-increasing-valuations-through-marketing",
+        "title": "Celebrating Five Years And Increasing Valuations Through Marketing",
+        "sourceType": "publication"
+      },
+      {
+        "url": "https://berkshireglobal.com/our-team/r-lawrence-roth",
+        "title": "R. Lawrence Roth - Berkshire Global Advisors",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://bermanarchive.stanford.edu/his-fathers-bookstore",
+        "title": "His Father’s Bookstore - Berman Archive",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.uww-adr.com/Larry-M-Roth",
+        "title": "Larry M. Roth - Florida Mediation Group",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.susqu.edu/profiles/roth",
+        "title": "Laurence Roth - Susquehanna University",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/posts/larry-roth-86b20713_testing-culture-ocio-growth-and-client-confidence-activity-7402060455793545216-ecbY",
+        "title": "Wealth Solutions Report: Culture, OCIO Growth, Retirement Confidence | Larry Roth posted on the topic | LinkedIn",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.rlrstrategicpartners.com/our-leadership",
+        "title": "Our Leadership",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.wealthmanagement.com/career-moves/larry-roth-rebrands-wealth-consultancy-hires-former-securities-america-ceo",
+        "title": "Larry Roth Rebrands Wealth Consultancy, Adds Former Securities America CEO",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/in/larry-roth-86b20713",
+        "title": "Larry Roth - Founder & Managing Partner, Ascentix Partners",
+        "sourceType": "linkedin"
+      }
+    ],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "approved",
+    "authoritativeSource": true,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-14T17:09:10.767Z",
+    "reporterId": "REP-000017"
+  },
+  {
+    "proposalId": "ENR-8fb665a8",
+    "currentName": "Mela Seyoum",
+    "currentOutlet": "Finacial Advisor IQ",
+    "reporterName": "Mela Seyoum",
+    "outlet": "Finacial Advisor IQ",
+    "email": null,
+    "beats": [],
+    "beatDescription": "",
+    "reporterType": "journalist",
+    "confidence": 0.9,
+    "status": "needs_review",
+    "sources": [
+      {
+        "url": "https://www.financialadvisoriq.com/about",
+        "title": "Financial Advisor IQ - Site About Page",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://muckrack.com/mela-seyoum/articles",
+        "title": "Articles by Mela Seyoum's Profile | Financial Times ...",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.financialadvisoriq.com/contributor/155214/4656654/616764?from=%2Fc%2F4656654%2F616764",
+        "title": "Contributor: Mela Seyoum",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.financialadvisoriq.com/c/5078974/715224/altruist_adding_planning_tools_platform",
+        "title": "Altruist Adding Tax Planning Tools to AI Platform",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://muckrack.com/mela-seyoum",
+        "title": "Mela Seyoum's Profile | Financial Times ...",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.kqed.org/perspectives/201601138729/my-parents-footsteps",
+        "title": "My Parent's Footsteps | KQED",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://cpj.org/data/people/seyoum-tsehaye",
+        "title": "Seyoum Tsehaye - Committee to Protect Journalists",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.voanews.com/author/habtamu-seyoum/gibyt",
+        "title": "Habtamu Seyoum - Reporter bio - Voice of America (VOA News)",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://x.com/melaseyoum?lang=ar",
+        "title": "Mela Seyoum (@MelaSeyoum) / X",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/in/mela-seyoum-8048042b8",
+        "title": "Mela Seyoum",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.linkedin.com/posts/alphacorewealthadvisory_stephanie-williams-caia-senior-wealth-activity-7463242297464340480-hxYD",
+        "title": "AlphaCore Wealth Advisory's Post - LinkedIn",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.linkedin.com/in/mhorridge",
+        "title": "Mathew Horridge",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.linkedin.com/in/johnpitt",
+        "title": "John Pitt, CFA",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.linkedin.com/in/stephencrowewriter",
+        "title": "Stephen Crowe",
+        "sourceType": "linkedin"
+      }
+    ],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "approved",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-14T17:09:48.709Z",
+    "reporterId": "REP-000019"
+  },
+  {
+    "proposalId": "ENR-afef5ba6",
+    "currentName": "Alex Ortolani",
+    "currentOutlet": "Wealth Management",
+    "reporterName": "Alex Ortolani",
+    "outlet": "Wealth Management",
+    "email": null,
+    "beats": [
+      "Wealth Management",
+      "Financial Advisors",
+      "RIA",
+      "M&A",
+      "Other"
+    ],
+    "beatDescription": "",
+    "reporterType": "journalist",
+    "confidence": 0.9,
+    "status": "verified",
+    "sources": [
+      {
+        "url": "https://www.wealthmanagement.com/author/alex-ortolani",
+        "title": "Alex Ortolani, Senior Reporter, Wealth Management",
+        "sourceType": "publication"
+      },
+      {
+        "url": "https://informaconnect.com/edge/speakers/alex-ortolani",
+        "title": "Alex Ortolani - Wealth Management Group | Wealth Management EDGE Speaker",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://informaconnect.com/ria-edge-austin/speakers/alex-ortolani",
+        "title": "Alex Ortolani - Wealth Management Group | RIA Edge Austin Speaker",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://informaconnect.com/ria-edge-orange-county/speakers/alex-ortolani",
+        "title": "Alex Ortolani - Wealth Management | RIA Edge Orange County Speaker",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://x.com/OrtolaniAlex",
+        "title": "Alex Ortolani (@OrtolaniAlex) / X",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://talkingbiznews.com/media-news/wealth-management-hires-ortolani-as-senior-reporter",
+        "title": "Wealth Management hires Ortolani as senior reporter",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/in/alexortolani",
+        "title": "Alex Ortolani - Sr. Reporter, WealthManagement.com",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://muckrack.com/alex-ortolani",
+        "title": "Alex Ortolani's Profile | Wealth Management Journalist",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.wealthmanagement.com/author",
+        "title": "Wealth Management Editors",
+        "sourceType": "publication"
+      }
+    ],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "approved",
+    "authoritativeSource": true,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-14T17:09:48.711Z",
+    "reporterId": "REP-000021"
+  },
+  {
+    "proposalId": "ENR-facf2eb1",
+    "currentName": "Julius Buchanan",
+    "currentOutlet": "Wealth Solutions Report",
+    "reporterName": "Julius Buchanan",
+    "outlet": "Wealth Solutions Report",
+    "email": null,
+    "beats": [
+      "Wealth Management",
+      "Financial Advisors",
+      "RIA",
+      "Fintech",
+      "Wealthtech",
+      "Asset Management",
+      "Investments",
+      "Banking",
+      "Private Equity",
+      "Compliance",
+      "Regulation"
+    ],
+    "beatDescription": "",
+    "reporterType": "journalist",
+    "confidence": 0.9,
+    "status": "verified",
+    "sources": [
+      {
+        "url": "https://www.wealthsolutionsreport.com/author/julius-buchanan",
+        "title": "Julius Buchanan - Wealth Solutions Report",
+        "sourceType": "publication"
+      },
+      {
+        "url": "https://www.wealthsolutionsreport.com/about-us",
+        "title": "About Us",
+        "sourceType": "publication"
+      },
+      {
+        "url": "https://www.wealthsolutionsreport.com/writers",
+        "title": "Writers",
+        "sourceType": "publication"
+      },
+      {
+        "url": "https://www.linkedin.com/in/julius-buchanan-10a410119",
+        "title": "Julius Buchanan",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.linkedin.com/company/wealth-solutions-report",
+        "title": "Wealth Solutions Report",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.prnewswire.com/news-releases/wealth-solutions-report-names-veteran-journalist-jeff-berman-contributing-editor-302058395.html",
+        "title": "Wealth Solutions Report Names Veteran Journalist Jeff Berman Contributing Editor",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.wealthsolutionsreport.com/author/julius-buchanan/page/9",
+        "title": "Julius Buchanan - Wealth Solutions Report (Page 9)",
+        "sourceType": "publication"
+      },
+      {
+        "url": "https://www.youtube.com/watch?v=Dw3bqPl34GU",
+        "title": "Julius Buchanan: Focus on Quality Thought Leadership",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/posts/alexandra-zendrian-857649a_julius-buchanan-is-literally-sharing-the-activity-7467942530941263872--Xd5",
+        "title": "Julius Buchanan's Wealth Solutions Report | Alexandra ...",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.wealthsolutionsreport.com/author/julius-buchanan/page/12",
+        "title": "Julius Buchanan - Wealth Solutions Report (Page 12)",
+        "sourceType": "publication"
+      }
+    ],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "approved",
+    "authoritativeSource": true,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-14T17:10:52.920Z",
+    "reporterId": "REP-000022"
+  },
+  {
+    "proposalId": "ENR-11f23477",
+    "currentName": "Michael Kitces",
+    "currentOutlet": "InvestmentNews",
+    "reporterName": "Michael Kitces",
+    "outlet": "InvestmentNews",
+    "email": null,
+    "beats": [],
+    "beatDescription": "",
+    "reporterType": "journalist",
+    "confidence": 0.9,
+    "status": "verified",
+    "sources": [
+      {
+        "url": "https://www.investmentnews.com/external-contributors/michael-kitces",
+        "title": "Michael Kitces - InvestmentNews",
+        "sourceType": "publication"
+      },
+      {
+        "url": "https://www.investmentnews.com/authors/michaelkitces",
+        "title": "Michael Kitces - InvestmentNews",
+        "sourceType": "publication"
+      },
+      {
+        "url": "https://www.investmentnews.com/podcasts/the-investmentnews-podcast/going-long-with-michael-kitces-and-ben-harrison/207665",
+        "title": "Going long with Michael Kitces and Ben Harrison - InvestmentNews",
+        "sourceType": "publication"
+      },
+      {
+        "url": "https://www.investmentnews.com/podcasts/the-investmentnews-podcast/michael-kitces-explains-how-to-use-ai-to-improve-your-advisory-business/238342",
+        "title": "Michael Kitces explains how to use AI to improve your advisory business - InvestmentNews",
+        "sourceType": "publication"
+      },
+      {
+        "url": "https://en.wikipedia.org/wiki/Michael_Kitces",
+        "title": "Michael Kitces",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.amazon.com/stores/author/B00L1J0CGQ",
+        "title": "Amazon.com: Michael Kitces: books, biography, latest update",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.kitces.com/media",
+        "title": "Media Details For Michael Kitces",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.bigspeak.com/speakers/michael-kitces",
+        "title": "Keynote Speaker Michael Kitces Speaking Fee and Information",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://informaconnect.com/edge/speakers/michael-kitces",
+        "title": "Michael Kitces - Kitces.com | Wealth Management EDGE Speaker",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/posts/michaelkitces_this-is-a-really-good-2x2-matrix-in-thinking-activity-7437867103069736960-LeSE",
+        "title": "Michael Kitces' Post - LinkedIn",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.linkedin.com/in/michaelkitces",
+        "title": "Michael Kitces - Chief Financial Planning Nerd",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.linkedin.com/company/kitces",
+        "title": "Kitces.com",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.linkedin.com/posts/michaelkitces_is-complexity-in-financial-planning-necessary-activity-7328821533383000066-bl16",
+        "title": "How young advisors can balance complexity and simplicity ...",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.financial-planning.com/author/michael-kitces-iag918",
+        "title": "Michael Kitces - Head of Planning Strategy",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.whitecoatinvestor.com/michael-kitces-podcast-124",
+        "title": "Financial Advisors: The Good, The Bad, and The Ugly with ...",
+        "sourceType": "other"
+      }
+    ],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "rejected",
+    "authoritativeSource": true,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-14T17:10:52.921Z",
+    "reporterId": "REP-000023"
+  },
+  {
+    "proposalId": "ENR-91e3a789",
+    "currentName": "Elana Iskowitz",
+    "currentOutlet": "WealthTech Today",
+    "reporterName": "Elana Iskowitz",
+    "outlet": "WealthTech Today",
+    "email": null,
+    "beats": [
+      "Fintech",
+      "Wealth Management",
+      "Financial Advisors",
+      "Asset Management",
+      "Investments",
+      "Financial Planning",
+      "Technology"
+    ],
+    "beatDescription": "",
+    "reporterType": "journalist",
+    "confidence": 0.9,
+    "status": "verified",
+    "sources": [
+      {
+        "url": "https://wealthtechtoday.com/author/elana/page/24",
+        "title": "Elana Iskowitz, Author at - Wealthtech Today",
+        "sourceType": "publication"
+      },
+      {
+        "url": "https://wealthtechtoday.com",
+        "title": "WealthTech Today Blogs & Podcasts",
+        "sourceType": "publication"
+      },
+      {
+        "url": "https://wealthtechtoday.com/author/elana/page/7",
+        "title": "Elana Iskowitz, Author at - Wealthtech Today",
+        "sourceType": "publication"
+      },
+      {
+        "url": "https://podcasts.apple.com/us/podcast/wealthtech-today/id1454181987",
+        "title": "WealthTech Today - Podcast",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://open.spotify.com/episode/0hQsppvJxCyyVG30C4LS0p",
+        "title": "Ep. 349: July WealthTech News - WealthTech Today",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://nysba.org/wp-content/uploads/2020/04/BarJournJune02.pdf",
+        "title": "[PDF] Journal - New York State Bar Association",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/in/elanaiskowitz",
+        "title": "Elana R.",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://bbyo.org/the-shofar/2023/november/making-history-writing-the-next-chapter-for-american-jewry",
+        "title": "Making History: Writing the Next Chapter for American Jewry",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://wealthtechtoday.com/2024/11/27/ep-266-wealth-education-revolution-financial-literacy-at-scale-with-ashley-fox-empify",
+        "title": "Ep. 266: Wealth Education Revolution: Financial Literacy at Scale with Ashley Fox, Empify -",
+        "sourceType": "publication"
+      },
+      {
+        "url": "https://www.instagram.com/reel/DYdL1QFTIFv",
+        "title": "Instagram",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/posts/craigiskowitz_how-wealthcom-is-using-ai-to-fix-the-broken-activity-7316140300018606081-LNi5",
+        "title": "Interview with Wealth.com CEO on estate planning and AI | Craig Iskowitz posted on the topic | LinkedIn",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.linkedin.com/posts/craigiskowitz_wealthtech-today-blogs-podcasts-activity-7028767336757088256-bCpD",
+        "title": "WealthTech Today Blogs & Podcasts | Craig Iskowitz | 34 comments",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.linkedin.com/posts/craigiskowitz_wealthmanagement-fintech-innovation-activity-7289370770210738177-8Npq",
+        "title": "#wealthmanagement #fintech #innovation #technology #investment | Craig Iskowitz | 17 comments",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://podcasts.apple.com/fr/podcast/wealthtech-today/id1454181987",
+        "title": "WealthTech Today - Émission - Apple Podcasts",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://wealthtechtoday.com/author/elana",
+        "title": "Elana Iskowitz, Author at - Wealthtech Today",
+        "sourceType": "publication"
+      },
+      {
+        "url": "https://iskowitz.com",
+        "title": "Craig Iskowitz - Craig Iskowitz",
+        "sourceType": "other"
+      }
+    ],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "approved",
+    "authoritativeSource": true,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-14T17:12:40.133Z",
+    "reporterId": "REP-000026"
+  },
+  {
+    "proposalId": "ENR-eee2b0c0",
+    "currentName": "Charles Paikert",
+    "currentOutlet": "Barron's Advisor",
+    "reporterName": "Charles Paikert",
+    "outlet": "Barron's Advisor",
+    "email": null,
+    "beats": [
+      "Wealth Management",
+      "M&A",
+      "RIA",
+      "Financial Advisors",
+      "Fintech",
+      "Asset Management"
+    ],
+    "beatDescription": "",
+    "reporterType": "journalist",
+    "confidence": 0.9,
+    "status": "needs_review",
+    "sources": [
+      {
+        "url": "https://www.linkedin.com/posts/futureproofhq_charles-paikert-has-spent-15-years-covering-activity-7305256233467330560-fS0T",
+        "title": "Future Proof's Post - LinkedIn",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.uhnwinstitute.org/member/charles-paikert",
+        "title": "Charles Paikert - The UHNW Institute",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.advisorengine.com/community/charles-paikert",
+        "title": "Charles Paikert",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/in/charles-paikert-48965112",
+        "title": "Charles Paikert",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.barrons.com/advisor/articles/registered-investment-advisors-sell-remain-independent-m-a-7fcaccd1",
+        "title": "These Independent RIAs Face a Tough Choice: Scale Up, Sell Out, or Slow Down <!-- --> - Barron's",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://x.com/paikert",
+        "title": "Charles Paikert (@paikert) / X",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://riabiz.com/author/charles-paikert/page/1",
+        "title": "Charles Paikert | RIABiz",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/posts/charles-paikert-48965112_solving-the-family-office-data-problem-activity-7188191573921181696-Gu6B",
+        "title": "Solving The Family Office Data Problem | Charles Paikert",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.linkedin.com/posts/charles-paikert-48965112_how-next-gen-financial-advisors-are-raising-activity-7295848238429945856-0Z3E",
+        "title": "How Next-Gen Financial Advisors Are Raising Money to Buy Ownership Stakes Where They Work | Charles Paikert",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.financial-planning.com/author/charles-paikert-iag751",
+        "title": "Charles Paikert - Senior Editor | Financial Planning",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.familywealthreport.com/article.php/FWR's-Charles-Paikert-Discusses-M&A-In-A-Time-Of-COVID",
+        "title": "FWR's Charles Paikert Discusses M&A In A Time Of COVID",
+        "sourceType": "other"
+      }
+    ],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "approved",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-14T17:12:40.134Z",
+    "reporterId": "REP-000027"
+  },
+  {
+    "proposalId": "ENR-a7a32abc",
+    "currentName": "Bill Hortz",
+    "currentOutlet": "wealthtender",
+    "reporterName": "Bill Hortz",
+    "outlet": "wealthtender",
+    "email": null,
+    "beats": [],
+    "beatDescription": "",
+    "reporterType": "journalist",
+    "confidence": 0.9,
+    "status": "verified",
+    "sources": [
+      {
+        "url": "https://wealthtender.com/library/page/32",
+        "title": "Library - Page 32 of 236 - Wealthtender",
+        "sourceType": "publication"
+      },
+      {
+        "url": "https://wealthtender.com/grow/institute-for-innovation-development",
+        "title": "Institute for Innovation Development Insights - Wealthtender",
+        "sourceType": "publication"
+      },
+      {
+        "url": "https://wealthtender.com/service-providers/institute-for-innovation-development",
+        "title": "Institute for Innovation Development",
+        "sourceType": "publication"
+      },
+      {
+        "url": "https://www.linkedin.com/in/williamhortz",
+        "title": "William Hortz - Financial services innovation writer ...",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://innovationdevelopment.org/bill-hortz/transforming-wealth-management-experience",
+        "title": "Transforming the Wealth Management Experience | Innovation Development",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://intelligentrelations.com/journalist/bill-hortz",
+        "title": "Bill Hortz - Journalist Profile - Intelligent Relations",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.nasdaq.com/authors/bill-hortz",
+        "title": "Bill Hortz",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.fa-mag.com/featured-columnists/bill-hortz-innovative-blog",
+        "title": "Bill Hortz On Innovation",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://actionablebooks.com/team/bill-hortz",
+        "title": "Bill Hortz - Actionable Author",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.gripventure.com/bill-hortz",
+        "title": "Bill Hortz",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/posts/williamhortz_institute-for-innovation-development-wealthtender-activity-7234904537872973824-GV3k",
+        "title": "Institute for Innovation Development - Wealthtender | William Hortz",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://innovationdevelopment.org/bill-hortz/new-foundation-financial-services-rapidly-evolving-landscape",
+        "title": "A New Foundation for Financial Services in a Rapidly Evolving Landscape | Innovation Development",
+        "sourceType": "other"
+      }
+    ],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "approved",
+    "authoritativeSource": true,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-14T17:13:06.868Z",
+    "reporterId": "REP-000028"
+  },
+  {
+    "proposalId": "ENR-6894aa33",
+    "currentName": "Amit Chowdry",
+    "currentOutlet": "Pulse 2.0",
+    "reporterName": "Amit Chowdry",
+    "outlet": "Pulse 2.0",
+    "email": null,
+    "beats": [],
+    "beatDescription": "",
+    "reporterType": "journalist",
+    "confidence": 0.9,
+    "status": "needs_review",
+    "sources": [
+      {
+        "url": "https://pulse2.com/about-us",
+        "title": "About Pulse 2.0",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.youtube.com/watch?v=NVvBCawqC98",
+        "title": "Tech media UNVEILED: strategies for startup SUCCESS - A chat with Amit Chowdhry",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/in/amitchowdhry",
+        "title": "Amit Chowdhry - Co-Founder & Editor in Chief at Pulse 2.0 | LinkedIn",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://pulse2.com/contact",
+        "title": "Contact",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://jmacpr.com/qa-amit-chowdhry-of-pulse-2-0",
+        "title": "Q&A: Amit Chowdhry of Pulse 2.0 - Jmac | PR",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://about.me/amitchowdhry",
+        "title": "Amit Chowdhry | about.me",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.forbes.com/sites/amitchowdhry",
+        "title": "Amit Chowdhry - Midwest Waves",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://me.sh/profile/amit-chowdhry",
+        "title": "Amit Chowdhry - LinkedIn, Twitter, Facebook",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/company/pulse2news",
+        "title": "Pulse 2.0 - Pulse 2.0 focuses on business news, profiles, and deal flow coverage.",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.amit-chaudhary.com",
+        "title": "Amit Chaudhary",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/in/amitkchoudhary",
+        "title": "Amit Choudhary",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.ynos.in/angel-investor/amit-choudhary-700271",
+        "title": "Amit Choudhary - Angel Investor Profile & Invested ...",
+        "sourceType": "other"
+      }
+    ],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "approved",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-14T17:13:06.869Z",
+    "reporterId": "REP-000029"
+  },
+  {
+    "proposalId": "ENR-30147c48",
+    "currentName": "Bill Hortz",
+    "currentOutlet": "Advisorpedia",
+    "reporterName": "Bill Hortz",
+    "outlet": "Advisorpedia",
+    "email": null,
+    "beats": [
+      "Wealth Management",
+      "Financial Advisors",
+      "RIA",
+      "Fintech",
+      "Wealthtech",
+      "Asset Management",
+      "Investments",
+      "Retirement",
+      "Financial Planning",
+      "Banking",
+      "Private Equity",
+      "Venture Capital",
+      "Insurance",
+      "Technology",
+      "M&A",
+      "Compliance",
+      "Regulation",
+      "Practice Management",
+      "Advisor Technology",
+      "General Business"
+    ],
+    "beatDescription": "",
+    "reporterType": "journalist",
+    "confidence": 0.9,
+    "status": "verified",
+    "sources": [
+      {
+        "url": "https://www.nasdaq.com/authors/bill-hortz/page/4",
+        "title": "Bill Hortz | Nasdaq",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.fa-mag.com/featured-columnists/bill-hortz-innovative-blog",
+        "title": "Bill Hortz On Innovation",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.advisorpedia.com/growth/adding-family-office-services-for-competitive-value-creation",
+        "title": "Adding Family Office Services for Competitive Value Creation | Advisorpedia",
+        "sourceType": "publication"
+      },
+      {
+        "url": "https://innovationdevelopment.org/bill-hortz/helping-advisors-stay-ahead-curve",
+        "title": "Helping Advisors Stay Ahead Of The Curve",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/in/williamhortz",
+        "title": "William Hortz - Financial services innovation writer ...",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://intelligentrelations.com/journalist/bill-hortz",
+        "title": "Bill Hortz - Journalist Profile - Intelligent Relations",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.nasdaq.com/authors/bill-hortz",
+        "title": "Bill Hortz",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://actionablebooks.com/team/bill-hortz",
+        "title": "Bill Hortz - Actionable Author",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://innovationdevelopment.org/bill-hortz/new-foundation-financial-services-rapidly-evolving-landscape",
+        "title": "A New Foundation for Financial Services in a Rapidly ...",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/posts/williamhortz_institute-for-innovation-development-wealthtender-activity-7234904537872973824-GV3k",
+        "title": "William Hortz - Institute for Innovation Development",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.gripventure.com/bill-hortz",
+        "title": "Bill Hortz — grIP Venture Studio",
+        "sourceType": "other"
+      }
+    ],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "approved",
+    "authoritativeSource": true,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-14T17:15:24.862Z",
+    "reporterId": "REP-000030"
+  },
+  {
+    "proposalId": "ENR-f91fee13",
+    "currentName": "Michael Kitces",
+    "currentOutlet": "Nerd's Eye View",
+    "reporterName": "Michael Kitces",
+    "outlet": "Nerd's Eye View",
+    "email": null,
+    "beats": [
+      "Financial Advisors",
+      "Wealth Management",
+      "Financial Planning",
+      "Practice Management",
+      "Fintech",
+      "Wealthtech",
+      "Insurance",
+      "Retirement",
+      "Investments",
+      "Compliance",
+      "Regulation",
+      "Advisor Technology",
+      "Technology",
+      "RIA"
+    ],
+    "beatDescription": "",
+    "reporterType": "journalist",
+    "confidence": 0.9,
+    "status": "needs_review",
+    "sources": [
+      {
+        "url": "https://www.whitecoatinvestor.com/michael-kitces-podcast-124",
+        "title": "Financial Advisors: The Good, The Bad, and The Ugly with ...",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://x.com/MichaelKitces?lang=en",
+        "title": "MichaelKitces",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://informaconnect.com/edge/speakers/michael-kitces",
+        "title": "Kitces.com | Wealth Management EDGE Speaker",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.kitces.com",
+        "title": "Kitces.com - Advancing Knowledge in Financial Planning",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/in/michaelkitces",
+        "title": "Michael Kitces - Chief Financial Planning Nerd",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://en.wikipedia.org/wiki/Michael_Kitces",
+        "title": "Michael Kitces - Wikipedia",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.amazon.com/stores/author/B00L1J0CGQ",
+        "title": "Amazon.com: Michael Kitces: books, biography, latest update",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.kitces.com/media",
+        "title": "Media Details For Michael Kitces",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.bigspeak.com/speakers/michael-kitces",
+        "title": "Keynote Speaker Michael Kitces Speaking Fee and Information",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/posts/michaelkitces_2025-highlights-the-top-22-nerds-eye-view-activity-7408898225631518722-UL8h",
+        "title": "Michael Kitces' Post",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.kitces.com/blog/3-steps-for-building-a-powerful-linkedin-strategy",
+        "title": "Building A Powerful Financial Advisor LinkedIn Strategy",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/company/kitces",
+        "title": "Kitces.com",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.linkedin.com/posts/michaelkitces_is-complexity-in-financial-planning-necessary-activity-7328821533383000066-bl16",
+        "title": "How young advisors can balance complexity and simplicity ...",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.financial-planning.com/author/michael-kitces-iag918",
+        "title": "Michael Kitces - Head of Planning Strategy",
+        "sourceType": "other"
+      }
+    ],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "rejected",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-14T17:15:24.863Z",
+    "reporterId": "REP-000031"
+  },
+  {
+    "proposalId": "ENR-850ed52e",
+    "currentName": "Richard Walker",
+    "currentOutlet": "Customer Wins Podcast",
+    "reporterName": "Richard Walker",
+    "outlet": "Customer Wins Podcast",
+    "email": null,
+    "beats": [
+      "Financial Planning",
+      "Wealth Management",
+      "Fintech",
+      "Technology",
+      "Compliance",
+      "Regulation",
+      "Retirement",
+      "Private Equity"
+    ],
+    "beatDescription": "",
+    "reporterType": "journalist",
+    "confidence": 0.9,
+    "status": "needs_review",
+    "sources": [
+      {
+        "url": "https://podcasts.apple.com/ph/podcast/the-customer-wins/id1670197636",
+        "title": "The Customer Wins - Podcast - Apple Podcasts",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.quickforms.com/podcast",
+        "title": "PODCAST | QuikForms",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.quickforms.com/podcast-blog",
+        "title": "PODCAST | QuikForms",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.youtube.com/watch?v=hd35vfU2ES0",
+        "title": "Four Keys to Customer Experience Success With Richard Walker",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.podchaser.com/podcasts/the-customer-wins-5349134",
+        "title": "The Customer Wins (Podcast) | Podchaser",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://en.wikipedia.org/wiki/Richard_Walker_(editor)",
+        "title": "Richard Walker (editor) - Wikipedia",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://riwalker.com/sample-page",
+        "title": "About - Richard Walker",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.theglobalist.com/contributors/richard-walker",
+        "title": "Richard Walker - The Globalist",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://olli.berkeley.edu/faculty_bio/richard-walker",
+        "title": "Richard Walker | OLLI @Berkeley",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.dw.com/en/richard-walker/person-38787685",
+        "title": "Richard Walker",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/newsletters/the-customer-wins-7163287400088100864",
+        "title": "The Customer Wins",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.linkedin.com/posts/murraygray_loved-being-on-the-the-customer-wins-podcast-activity-7171547947329961984-tJ9l",
+        "title": "Murray Gray's Post",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.linkedin.com/in/quikformsceo",
+        "title": "Rich Walker 🏁",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.bain.com/about/media-center/press-releases/2022/richard-walker-joins-bain-company-as-a-partner-focusing-on-web3-and-metaverse-in-the-financial-services-practice",
+        "title": "Richard Walker joins Bain & Company as a partner focusing on web3 and metaverse in the Financial Services practice | Bain & Company",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://economics.northwestern.edu/people/directory/richard-walker.html",
+        "title": "Richard Walker: Department of Economics - Northwestern University",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.prnewswire.com/news-releases/inveniam-hires-bain-veteran-richard-walker-as-private-markets-shift-toward-autonomous-capital-302716874.html",
+        "title": "Inveniam hires Bain veteran Richard Walker as private markets shift toward autonomous capital",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.sifma.org/people/richard-walker",
+        "title": "Richard Walker - SIFMA",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://uk.linkedin.com/in/richard-walker-9441b85a",
+        "title": "Richard Walker",
+        "sourceType": "linkedin"
+      }
+    ],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "approved",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-14T17:16:56.549Z",
+    "reporterId": "REP-000037"
+  },
+  {
+    "proposalId": "ENR-d1917c7c",
+    "currentName": "Christopher Robbins",
+    "currentOutlet": "Digital Wealth News",
+    "reporterName": "Christopher Robbins",
+    "outlet": "Digital Wealth News",
+    "email": null,
+    "beats": [
+      "Fintech",
+      "Wealthtech",
+      "Venture Capital",
+      "Technology"
+    ],
+    "beatDescription": "",
+    "reporterType": "journalist",
+    "confidence": 0.9,
+    "status": "needs_review",
+    "sources": [
+      {
+        "url": "https://dwealth.news/author/crobbins",
+        "title": "Christopher Robbins, Author at Dwealth.news",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://dwealth.news/author/crobbins/page/5",
+        "title": "Christopher Robbins, Author at Dwealth.news - Page 5 of 46",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://dwealth.news",
+        "title": "Home - Dwealth.news",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/in/christopher-robbins-226b4b7",
+        "title": "Christopher Robbins",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://dwealth.news/category/ai-finance/page/19",
+        "title": "AI & Finance Archives - Page 19 of 54 - Dwealth.news",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://en.wikipedia.org/wiki/Christopher_Robbins",
+        "title": "Christopher Robbins - Wikipedia",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://foxedquarterly.com/contributors/robbins-christopher-slightly-foxed-literary-review-magazine",
+        "title": "Christopher Robbins | Contributor to Slightly Foxed magazine",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://gothamist.com/staff/christopher-robbins",
+        "title": "Articles by Christopher Robbins | Gothamist",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://embedded.substack.com/p/my-internet-christopher-robbins-hell-gate",
+        "title": "My Internet: Christopher Robbins - by Nick Catucci",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://x.com/ChristRobbins?lang=en",
+        "title": "Christopher Robbins (@ChristRobbins) / X",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/in/robbinschristopher",
+        "title": "Christopher Robbins",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://dwealth.news/team",
+        "title": "DWN Leadership Team - Dwealth.news",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/in/christopher-robbins-128916286",
+        "title": "Christopher Robbins",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.thrivespc.com/about-us/our-leadership/chris-robbins",
+        "title": "Chris Robbins - Thrive SPC",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.vestiaadvisors.com/team/chris-robbins-cfp",
+        "title": "Chris Robbins, CFP® - Vestia",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://x.com/NJChrisRobbins",
+        "title": "Christopher Robbins (@NJChrisRobbins) / X",
+        "sourceType": "other"
+      }
+    ],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "approved",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-14T17:16:56.550Z",
+    "reporterId": "REP-000039"
+  },
+  {
+    "proposalId": "ENR-f5a47e83",
+    "currentName": "Damilola Esebame",
+    "currentOutlet": "The Street",
+    "reporterName": "Damilola Esebame",
+    "outlet": "The Street",
+    "email": null,
+    "beats": [],
+    "beatDescription": "",
+    "reporterType": "journalist",
+    "confidence": 0.9,
+    "status": "needs_review",
+    "sources": [
+      {
+        "url": "https://financebuzz.com/authors/damilola-esebame",
+        "title": "Personal Finance Stories by Damilola Esebame, CFEI® | FinanceBuzz",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://x.com/efeoise_",
+        "title": "Damilola Esebame (@efeoise_) / X",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/in/damilolaesebame",
+        "title": "Damilola Esebame, CFEI®",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.investing.com/brokers/author/damilola-esebame",
+        "title": "Damilola Esebame, Author at Online Trading",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://financefeeds.com/author/damilola-esebame-contributing-editor-for-defi",
+        "title": "Damilola Esebame - FinanceFeeds",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.zumper.com/blog/author/damilola",
+        "title": "Damilola Esebame, Author at The Zumper Blog",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://esebame.com/about-dami",
+        "title": "About Damilola Esebame | Finance Journalist & CFEI®",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://esebame.com",
+        "title": "Damilola Esebame | Finance Journalist & CFEI® Instructor",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.benzinga.com/author/damilola-esebame",
+        "title": "Damilola Esebame - Benzinga",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.financialeducatorscouncil.org/damilola-esebame",
+        "title": "Damilola Esebame - NFEC CFEI® & Financial Literacy Advocate",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://uk.linkedin.com/in/damilolaadekanmbi8",
+        "title": "Damilola A.",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.instagram.com/efeoise",
+        "title": "Damilola Esebame (@efeoise) • Instagram photos and videos",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://authory.com/DamilolaEsebame",
+        "title": "Damilola Esebame's Portfolio",
+        "sourceType": "other"
+      }
+    ],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "approved",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-14T17:17:54.094Z",
+    "reporterId": "REP-000043"
+  },
+  {
+    "proposalId": "ENR-fa12934f",
+    "currentName": "Michael Kitces and Ben Henry-Moreland",
+    "currentOutlet": "Nerd's Eye View",
+    "reporterName": "Michael Kitces and Ben Henry-Moreland",
+    "outlet": "Nerd's Eye View",
+    "email": null,
+    "beats": [
+      "Financial Planning",
+      "RIA",
+      "Practice Management",
+      "Advisor Technology",
+      "Financial Advisors",
+      "Wealth Management",
+      "Fintech",
+      "Investments",
+      "Regulation"
+    ],
+    "beatDescription": "",
+    "reporterType": "journalist",
+    "confidence": 0.9,
+    "status": "needs_review",
+    "sources": [
+      {
+        "url": "https://www.financial-planning.com/author/ben-henry-moreland",
+        "title": "Ben Henry-Moreland - Financial Planning",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.financialplanningassociation.org/meet-ben-henry-moreland-cfp-ea",
+        "title": "Meet Ben Henry-Moreland, CFP, EA | Financial Planning Association",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/posts/derektharp_advisortech-activity-7391166898631020544-CcDI",
+        "title": "Converting Client Data Across Financial Planning Software",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.linkedin.com/posts/michaelkitces_2025-highlights-the-top-22-nerds-eye-view-activity-7408898225631518722-UL8h",
+        "title": "Michael Kitces' Post",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.kitces.com/speaking/ben-henry-moreland",
+        "title": "Ben Henry-Moreland - Kitces.com",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.investmentnews.com/authors/michaelkitcesandbenhenry-moreland",
+        "title": "Michael Kitces and Ben Henry-Moreland - InvestmentNews",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/in/bhenrymoreland",
+        "title": "Ben Henry-Moreland, CFP®, EA - Writer and speaker on ... - LinkedIn",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.kitces.com/freelance-financial-planning-tax-preparation-workflows",
+        "title": "Freelance Financial Planning Tax Preparation Workflows - Kitces.com",
+        "sourceType": "other"
+      }
+    ],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "pending",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-14T17:17:54.095Z",
+    "reporterId": "REP-000044"
+  },
+  {
+    "proposalId": "ENR-44c72fd2",
+    "currentName": "n/a",
+    "currentOutlet": "Morningstar Simple But Not Easy",
+    "reporterName": "n/a",
+    "outlet": "Morningstar Simple But Not Easy",
+    "email": null,
+    "beats": [],
+    "beatDescription": "",
+    "reporterType": "placeholder",
+    "confidence": 0,
+    "status": "placeholder",
+    "sources": [],
+    "reasoningSummary": "The coverage record contains a placeholder reporter value and will not become an individual reporter.",
+    "approvalStatus": "pending",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-14T17:20:20.301Z"
+  },
+  {
+    "proposalId": "ENR-f7881bb6",
+    "currentName": "Mark Heynen",
+    "currentOutlet": "AI for Advisors Podcast",
+    "reporterName": "Mark Heynen",
+    "outlet": "AI for Advisors Podcast",
+    "email": null,
+    "beats": [
+      "Wealth Management",
+      "Financial Advisors",
+      "RIA",
+      "Fintech",
+      "Wealthtech",
+      "Advisor Technology",
+      "Technology",
+      "Compliance",
+      "Regulation",
+      "Practice Management"
+    ],
+    "beatDescription": "",
+    "reporterType": "journalist",
+    "confidence": 0.9,
+    "status": "verified",
+    "sources": [
+      {
+        "url": "https://podcasts.apple.com/us/podcast/ai-for-advisors/id1868295133",
+        "title": "AI for Advisors - Podcast - Apple Podcasts",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.aiforadvisorspodcast.com",
+        "title": "AI for Advisors Podcast | Where AI meets AUM",
+        "sourceType": "publication"
+      },
+      {
+        "url": "https://open.spotify.com/show/4z1NMErEJ5lxMe0aaO5w8W",
+        "title": "AI for Advisors | Podcast on Spotify",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.aiforadvisorspodcast.com/about",
+        "title": "About | AI for Advisors Podcast",
+        "sourceType": "publication"
+      },
+      {
+        "url": "https://www.youtube.com/channel/UC7eowx04PzjG4pLRqlOxhIg",
+        "title": "AI for Advisors Podcast",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://ffnews.com/people/mark-heynen",
+        "title": "Mark Heynen — Knapsack, Stellar Development Foundation | FF News",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/in/markheynen",
+        "title": "Mark Heynen - Building the #1 AI overlay @ Knapsack. Ex ... - LinkedIn",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.instagram.com/markheynen",
+        "title": "Mark Heynen (@markheynen) • Instagram photos and videos",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.youtube.com/watch?v=9vePHaLBmwc",
+        "title": "Mark Heynen, of Knap Inc., on the importance of data control in AI",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://startupfundraising.com/library/articles/mark-heynen",
+        "title": "Mark Heynen: Raised $400M - Startup Fundraising",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/posts/markheynen_wealthmanagement-financialadvisors-aiadoption-activity-7368513042185142276-HN8d",
+        "title": "Debunking AI pilot failures and future trends | Mark Heynen 🎒 posted on the topic | LinkedIn",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.linkedin.com/posts/markheynen_parker-ence-from-jump-advisor-ai-we-activity-7382120404280225792-oqZC",
+        "title": "\"Jump's founding story and AI for Advisors episode 8\" | Mark Heynen ...",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://ideas.everywhere.vc/p/podcast-mark-heynen-noah-spirakus-episode60-ai-in-your-knapsack",
+        "title": "Venture Everywhere Podcast: Mark Heynen with Noah Spirakus",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.humainpodcast.com/episode/edge-ai-revolution-building-private-enterprise-automations-with-knapsacks-mark-heynen",
+        "title": "Edge AI Revolution: Building Private Enterprise Automations with Knapsack's Mark Heynen – HumAIn Podcast",
+        "sourceType": "other"
+      }
+    ],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "approved",
+    "authoritativeSource": true,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-14T17:20:20.301Z",
+    "reporterId": "REP-000046"
+  },
+  {
+    "proposalId": "ENR-a4a405c1",
+    "currentName": "Michael Kitces and Ben Henry-Moreland",
+    "currentOutlet": "InvestmentNews",
+    "reporterName": "Michael Kitces and Ben Henry-Moreland",
+    "outlet": "InvestmentNews",
+    "email": null,
+    "beats": [],
+    "beatDescription": "",
+    "reporterType": "journalist",
+    "confidence": 0.9,
+    "status": "needs_review",
+    "sources": [
+      {
+        "url": "https://www.investmentnews.com/advisor-tech?page=2",
+        "title": "Financial Tech News for Financial Advisors - InvestmentNews",
+        "sourceType": "publication"
+      },
+      {
+        "url": "https://www.investmentnews.com/external-contributors/ben-henry-moreland",
+        "title": "Ben Henry-Moreland  - InvestmentNews",
+        "sourceType": "publication"
+      },
+      {
+        "url": "https://www.investmentnews.com/authors/michaelkitcesandbenhenry-moreland",
+        "title": "Michael Kitces and Ben Henry-Moreland - InvestmentNews",
+        "sourceType": "publication"
+      },
+      {
+        "url": "https://www.financial-planning.com/author/ben-henry-moreland",
+        "title": "Ben Henry-Moreland - Financial Planning",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.financialplanningassociation.org/meet-ben-henry-moreland-cfp-ea",
+        "title": "Meet Ben Henry-Moreland, CFP, EA | Financial Planning Association",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/in/bhenrymoreland",
+        "title": "Ben Henry-Moreland, CFP®, EA - Writer and speaker on ... - LinkedIn",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.kitces.com/speaking/ben-henry-moreland",
+        "title": "Ben Henry-Moreland - Kitces.com",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/posts/derektharp_advisortech-activity-7391166898631020544-CcDI",
+        "title": "Converting Client Data Across Financial Planning Software",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.kitces.com/freelance-financial-planning-tax-preparation-workflows",
+        "title": "Freelance Financial Planning Tax Preparation Workflows - Kitces.com",
+        "sourceType": "other"
+      }
+    ],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "pending",
+    "authoritativeSource": true,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-14T17:20:55.743Z",
+    "reporterId": "REP-000047"
+  },
+  {
+    "proposalId": "ENR-92cbd574",
+    "currentName": "Joe Anthony",
+    "currentOutlet": "Marketing Matchup Podcast",
+    "reporterName": "Joe Anthony",
+    "outlet": "Marketing Matchup Podcast",
+    "email": null,
+    "beats": [
+      "Wealth Management",
+      "RIA",
+      "Asset Management",
+      "Fintech",
+      "Wealthtech",
+      "Financial Advisors"
+    ],
+    "beatDescription": "",
+    "reporterType": "journalist",
+    "confidence": 0.9,
+    "status": "needs_review",
+    "sources": [
+      {
+        "url": "https://podcasts.apple.com/us/podcast/marketing-matchup/id1797592181",
+        "title": "Marketing Matchup - Video Podcast",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://zeno.fm/podcast/marketing-matchup",
+        "title": "Listen to Marketing Matchup | Zeno.FM",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://open.spotify.com/show/2eT69LpMVHDJet6nDyTxSV",
+        "title": "Marketing Matchup | Podcast on Spotify",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://gregoryagency.com/podcasts/marketing-matchup",
+        "title": "Marketing Matchup | Financial Marketing Podcast",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.themarketingmatchup.com",
+        "title": "Marketing Matchup Podcast",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.amazon.com/Joe-Anthony/e/B00FUME9SW%3Fref=dbs_a_mng_rwt_scns_share",
+        "title": "Amazon.com: Joe Anthony: books, biography, latest update",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://gregoryagency.com/about/joe-anthony",
+        "title": "Joe Anthony | CEO & Owner",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/in/joeanthony",
+        "title": "Joe Anthony",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://en.wikipedia.org/wiki/Joseph_Anthony",
+        "title": "Joseph Anthony - Wikipedia",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.instagram.com/joeanthonyspeaks?hl=en",
+        "title": "Joseph Anthony (@joeanthonyspeaks) • Instagram photos and videos",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://informaconnect.com/edge/speakers/joe-anthony",
+        "title": "Joe Anthony - Gregory | Wealth Management EDGE Speaker",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/in/janthonygfca",
+        "title": "Joe Anthony",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://clover-banjo-e93h.squarespace.com/about-us",
+        "title": "About Us — Joseph Anthony Group",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://fsa.merrill.com/anthony-joe",
+        "title": "Anthony Joe - Financial Solutions Advisor - Merrill",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.wealthspire.com/in-crowd-podcasts/owned-and-earned-how-joe-anthony-helped-elevate-the-finserv-industrys-growing-need-for-great-pr",
+        "title": "Owned and Earned: How Joe Anthony helped elevate the Finserv",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/in/joe-anthony",
+        "title": "Joseph Anthony",
+        "sourceType": "linkedin"
+      }
+    ],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "approved",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-14T17:20:55.745Z",
+    "reporterId": "REP-000048"
+  },
+  {
+    "proposalId": "ENR-9f436572",
+    "currentName": "n/a",
+    "currentOutlet": "Wealth Management",
+    "reporterName": "n/a",
+    "outlet": "Wealth Management",
+    "email": null,
+    "beats": [],
+    "beatDescription": "",
+    "reporterType": "placeholder",
+    "confidence": 0,
+    "status": "placeholder",
+    "sources": [],
+    "reasoningSummary": "The coverage record contains a placeholder reporter value and will not become an individual reporter.",
+    "approvalStatus": "pending",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-14T17:22:09.077Z"
+  },
+  {
+    "proposalId": "ENR-f598472c",
+    "currentName": "Rob Burgess",
+    "currentOutlet": "ThinkAdvisor",
+    "reporterName": "Rob Burgess",
+    "outlet": "ThinkAdvisor",
+    "email": null,
+    "beats": [],
+    "beatDescription": "",
+    "reporterType": "journalist",
+    "confidence": 0.9,
+    "status": "verified",
+    "sources": [
+      {
+        "url": "https://open.spotify.com/show/6aIeLcPyBQORX6kCmvob7M",
+        "title": "The Rob Burgess Show | Podcast on Spotify",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://podcasts.apple.com/us/podcast/the-rob-burgess-show/id1097091988",
+        "title": "The Rob Burgess Show - Podcast - Apple Podcasts",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.financial-planning.com/author/rob-burgess",
+        "title": "Rob Burgess reporter Financial Planning - Former reporter | Financial Planning",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.wealthmanagement.com/author/rob-burgess",
+        "title": "Rob Burgess | Wealth Management",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.thinkadvisor.com/author/profile/rob-burgess",
+        "title": "Author | Thinkadvisor",
+        "sourceType": "publication"
+      },
+      {
+        "url": "https://www.americanbanker.com/author/rob-burgess",
+        "title": "Rob Burgess reporter Financial Planning - Former reporter | American Banker",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.nationalmortgagenews.com/author/rob-burgess",
+        "title": "Rob Burgess reporter Financial Planning - Former reporter | National Mortgage News",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://ballotpedia.org/Rob_Burgess",
+        "title": "Rob Burgess - Ballotpedia",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/posts/thinkadvisor_could-retirement-planning-be-the-next-ai-activity-7452367075605450752-XX6f",
+        "title": "ThinkAdvisor's Post",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.linkedin.com/posts/jlevaux_could-retirement-planning-be-the-next-ai-activity-7452365555703054337-cqhu",
+        "title": "Janet Purdy Levaux, MBA/MA's Post",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://uk.linkedin.com/in/headforpoints",
+        "title": "Rob Burgess",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.capitalgroup.com/institutional/about-us/our-people/investment-professionals/robert-burgess.html",
+        "title": "Robert Burgess | Capital Group",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/in/roberttburgess",
+        "title": "Rob Burgess",
+        "sourceType": "linkedin"
+      }
+    ],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "approved",
+    "authoritativeSource": true,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-14T17:22:09.077Z",
+    "reporterId": "REP-000053"
+  },
+  {
+    "proposalId": "ENR-afd42453",
+    "currentName": "Rachel Dalloo",
+    "currentOutlet": "Connect Money",
+    "reporterName": "Rachel Dalloo",
+    "outlet": "Connect Money",
+    "email": null,
+    "beats": [
+      "Wealth Management",
+      "Financial Advisors",
+      "RIA",
+      "Private Equity",
+      "Asset Management",
+      "Investments",
+      "Financial Planning"
+    ],
+    "beatDescription": "",
+    "reporterType": "journalist",
+    "confidence": 0.9,
+    "status": "verified",
+    "sources": [
+      {
+        "url": "https://www.connectmoney.com/story-market/wealth-management/page/35",
+        "title": "Wealth Management Archives - Page 35 of 93 - Connect Money",
+        "sourceType": "publication"
+      },
+      {
+        "url": "https://www.linkedin.com/in/racheldalloo",
+        "title": "Rachel Dalloo",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.connectmoney.com/stories/people-company-news-week-of-july-10-2026",
+        "title": "People & Company News, Week of July 10, 2026",
+        "sourceType": "publication"
+      },
+      {
+        "url": "https://qz.com/author/racheldalloo?page=2",
+        "title": "Rachel Dalloo - Quartz",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.instagram.com/dallooreports",
+        "title": "Rachel Dalloo (@dallooreports) • Instagram photos and videos",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://x.com/R_Dalloo",
+        "title": "Rachel Dalloo (@R_Dalloo) / X",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://qz.com/author/racheldalloo",
+        "title": "Rachel Dalloo - Quartz",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://yorkpbnews.net/author/rachel-dalloo",
+        "title": "Rachel Dalloo",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.threads.com/@dallooreports",
+        "title": "Rachel Dalloo (@dallooreports) • Threads, Say more",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/posts/racheldalloo_private-markets-are-hot-liquidity-market-activity-7422381759587254273-ijtS",
+        "title": "Rachel Dalloo - Liquidity, Market Volatility Concerns Are Not",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.linkedin.com/company/apollon-financial",
+        "title": "Apollon Financial - At Apollon Financial, we believe planning is the foundation for success.",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.linkedin.com/posts/racheldalloo_these-south-asian-firms-are-tapping-into-activity-7361433865787252736-NII9",
+        "title": "Rachel Dalloo's Post",
+        "sourceType": "linkedin"
+      }
+    ],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "approved",
+    "authoritativeSource": true,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-14T17:22:57.787Z",
+    "reporterId": "REP-000054"
+  },
+  {
+    "proposalId": "ENR-77055e21",
+    "currentName": "Nik Milanovic",
+    "currentOutlet": "This Week in Fintech",
+    "reporterName": "Nik Milanovic",
+    "outlet": "This Week in Fintech",
+    "email": null,
+    "beats": [
+      "Fintech",
+      "Venture Capital",
+      "Technology",
+      "General Business"
+    ],
+    "beatDescription": "",
+    "reporterType": "journalist",
+    "confidence": 0.9,
+    "status": "needs_review",
+    "sources": [
+      {
+        "url": "https://medium.com/wharton-fintech/nik-milanovi%C4%87-founder-of-this-week-in-fintech-and-general-partner-of-the-fintech-fund-on-9023790f242c",
+        "title": "Nik Milanović, Founder of This Week in Fintech and ...",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://podcasts.apple.com/us/podcast/this-week-in-fintech/id1669335245",
+        "title": "This Week in Fintech - Apple Podcasts",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.vcsheet.com/who/nik-milanovic",
+        "title": "Nik Milanović (The Fintech Fund) / VC Breakdown & Contact",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/in/nikm",
+        "title": "Nik Milanović - GP, The Fintech Fund",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.thefintechfund.com/press",
+        "title": "Press — The Fintech Fund",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://theflip.africa/contributors/nik-milanovic",
+        "title": "Nik Milanović",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://humantic.ai/public-profile/nik-milanovi-504e5aaca3bf30c9",
+        "title": "Humantic AI Profile for Nik Milanović, Founder, Stablecon",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://podcasts.apple.com/us/podcast/nik-milanovi%C4%87-founder-of-this-week-in-fintech/id1685124657?i=1000659272750",
+        "title": "Nik Milanović, founder of “This Week in Fintech ...",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.forbes.com/sites/nikmilanovic",
+        "title": "Nik Milanovic",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/posts/zbijesse_heres-how-nik-milanovi%C4%87-turned-a-casual-activity-7303379600359755776-w-Ad",
+        "title": "How Nik Milanović turned a casual update into a global ...",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.linkedin.com/posts/rexsalisbury_exclusive-plaid-is-acquiring-this-week-in-activity-7442686079289430016-vUMR",
+        "title": "Plaid Acquires This Week in Fintech, Nik Milanović Discusses Future Plans | Rex Salisbury posted on the topic | LinkedIn",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.linkedin.com/company/fintechfund",
+        "title": "The Fintech Fund 🚀 - An early-stage venture fund supporting the best teams in fintech and defi today.",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://courses.cfte.education/podcasts/exploring-the-next-wave-of-fintech-with-nik-milanovic",
+        "title": "Exploring the Next Wave of Fintech | (with Nik Milanović, Founder of This Week in FinTech) | Fintech - CFTE",
+        "sourceType": "other"
+      }
+    ],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "approved",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-14T17:22:57.788Z",
+    "reporterId": "REP-000055"
+  },
+  {
+    "proposalId": "ENR-d33f5fa7",
+    "currentName": "n/a",
+    "currentOutlet": "PR Newsire",
+    "reporterName": "n/a",
+    "outlet": "PR Newsire",
+    "email": null,
+    "beats": [],
+    "beatDescription": "",
+    "reporterType": "placeholder",
+    "confidence": 0,
+    "status": "placeholder",
+    "sources": [],
+    "reasoningSummary": "The coverage record contains a placeholder reporter value and will not become an individual reporter.",
+    "approvalStatus": "pending",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-14T17:24:04.313Z"
+  },
+  {
+    "proposalId": "ENR-cf9ffac0",
+    "currentName": "Ryan Nauman",
+    "currentOutlet": "Adjusted for Risk",
+    "reporterName": "Ryan Nauman",
+    "outlet": "Adjusted for Risk",
+    "email": null,
+    "beats": [
+      "Wealth Management",
+      "Financial Advisors",
+      "Asset Management",
+      "Investments",
+      "Retirement",
+      "Financial Planning",
+      "Banking",
+      "Private Equity",
+      "Venture Capital",
+      "Insurance",
+      "Technology",
+      "M&A",
+      "Compliance",
+      "Regulation",
+      "Practice Management",
+      "Advisor Technology"
+    ],
+    "beatDescription": "",
+    "reporterType": "journalist",
+    "confidence": 0.9,
+    "status": "needs_review",
+    "sources": [
+      {
+        "url": "https://open.spotify.com/show/0AeG2ZAF0cRujyzaZ3pefz",
+        "title": "Adjusted for Risk | Podcast on Spotify",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.wealthmanagement.com/program/adjusted-for-risk",
+        "title": "Adjusted for Risk",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/posts/ryannauman1_the-best-of-adjusted-for-risk-activity-7275243199810416640-Lc-m",
+        "title": "The best of Adjusted for Risk! | Ryan Nauman",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://informaconnect.com/zephyr/adjusted-for-risk",
+        "title": "Enhance Your Wealth Management Strategy with Zephyr's Adjusted-for-Risk Solutions | KNNLab",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/in/ryannauman1",
+        "title": "Ryan Nauman - Investment strategist and industry thought leader with 20 ...",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.wealthmanagement.com/author/ryan-nauman",
+        "title": "Ryan Nauman Adjusted for Risk | WealthManagement.com",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://muckrack.com/ryan-nauman",
+        "title": "Ryan Nauman's Profile - Muck Rack",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/in/ryan-naumann-7667b431",
+        "title": "Ryan Naumann",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.instagram.com/rnaumann?hl=en",
+        "title": "Ryan Naumann (@rnaumann) • Instagram photos and videos",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/posts/ryannauman1_adjusted-for-risk-women-in-investing-activity-7340753007841566722-aQqT",
+        "title": "Adjusted for Risk: Women in Investing | Ryan Nauman | 13 comments",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.linkedin.com/posts/robert-stark-053202_private-credit-and-its-impact-on-investment-activity-7383918729966923776-AdoA",
+        "title": "Private Credit and Its Impact on Investment Portfolios | Robert Stark",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.linkedin.com/videos/ryannauman1_investmentstrategies-managedfutures-portfoliodiversification-activity-7391169993301942272-F1EF",
+        "title": "How Managed Futures Can Diversify Your Portfolio | Ryan ...",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.countrybank.com/meet-the-lender-ryan-nauman",
+        "title": "Meet the Lender: Ryan Nauman",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://informaconnect.com/zephyr/article/adjusted-for-risk-investment-innovation-and-the-next-gen-advisor",
+        "title": "Adjusted for Risk: Investment, Innovation, and the Next Gen ...",
+        "sourceType": "other"
+      }
+    ],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "approved",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-14T17:24:04.313Z",
+    "reporterId": "REP-000068"
+  },
+  {
+    "proposalId": "ENR-14d2ee4c",
+    "currentName": "Tony Zerucha",
+    "currentOutlet": "Crowdfund Insider",
+    "reporterName": "Tony Zerucha",
+    "outlet": "Crowdfund Insider",
+    "email": null,
+    "beats": [],
+    "beatDescription": "",
+    "reporterType": "journalist",
+    "confidence": 0.9,
+    "status": "verified",
+    "sources": [
+      {
+        "url": "https://www.crowdfundinsider.com/about-us",
+        "title": "About Us - Crowdfund Insider",
+        "sourceType": "publication"
+      },
+      {
+        "url": "https://www.linkedin.com/company/crowdfund-insider",
+        "title": "Crowdfund Insider - Crowdfund Insider is the leading news site covering the global Fintech industry",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://ca.linkedin.com/in/tonyzerucha",
+        "title": "Tony Zerucha - Award-winning community/fintech journalist. Digital ...",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://www.crowdfundinsider.com/tag/stablecoins",
+        "title": "Stablecoins - All News And Posts By Crowdfund Insider",
+        "sourceType": "publication"
+      },
+      {
+        "url": "https://www.crowdfundinsider.com/women-changing-finance",
+        "title": "Women Changing Finance | Crowdfund Insider",
+        "sourceType": "publication"
+      },
+      {
+        "url": "https://www.heyfuturenexus.com/authors/tony-zerucha",
+        "title": "Tony Zerucha - Future Nexus",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://x.com/TonyZerucha",
+        "title": "Tony Zerucha (@TonyZerucha) / Posts / X - Twitter",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://muckrack.com/tonyzerucha/articles",
+        "title": "Articles by Tony Zerucha's Profile | Crowdfund Insider, The Clipper ...",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.helpareporter.com/journalist/tony-zerucha",
+        "title": "Tony Zerucha - Award-winning community/fintech journalist ...",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.linkedin.com/posts/tonyzerucha_fintech-activity-7061809255707791360-k6uU",
+        "title": "Tony Zerucha - fintech",
+        "sourceType": "linkedin"
+      },
+      {
+        "url": "https://futureofgood.co/author/tony-zerucha",
+        "title": "Tony Zerucha, Author at Future of Good",
+        "sourceType": "other"
+      },
+      {
+        "url": "https://www.crowdfundinsider.com/category/featured-headlines",
+        "title": "Featured Headlines - All News And Articles By Crowdfund Insider",
+        "sourceType": "publication"
+      }
+    ],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "approved",
+    "authoritativeSource": true,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-14T17:24:45.184Z",
+    "reporterId": "REP-000072"
+  },
+  {
+    "proposalId": "ENR-9353b905",
+    "currentName": "Steve Garmhausen",
+    "currentOutlet": "Barron's",
+    "reporterName": "Steve Garmhausen",
+    "outlet": "Barron's",
+    "email": null,
+    "beats": [],
+    "beatDescription": "",
+    "reporterType": "reporter",
+    "confidence": 0,
+    "status": "needs_review",
+    "sources": [],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "pending",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-17T16:27:12.388Z",
+    "reporterId": "REP-000075",
+    "currentReporterType": "reporter",
+    "currentBeats": "",
+    "currentNotes": ""
+  },
+  {
+    "proposalId": "ENR-2bf376a1",
+    "currentName": "n/a",
+    "currentOutlet": "Bloomberg Surveillance Radio",
+    "reporterName": "n/a",
+    "outlet": "Bloomberg Surveillance Radio",
+    "email": null,
+    "beats": [],
+    "beatDescription": "",
+    "reporterType": "reporter",
+    "confidence": 0,
+    "status": "placeholder",
+    "sources": [],
+    "reasoningSummary": "The coverage record contains a placeholder reporter value and will not become an individual reporter.",
+    "approvalStatus": "pending",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-17T16:27:12.404Z"
+  },
+  {
+    "proposalId": "ENR-b555eeb5",
+    "currentName": "Alyson Tucci",
+    "currentOutlet": "Barron's Advisor",
+    "reporterName": "Alyson Tucci",
+    "outlet": "Barron's Advisor",
+    "email": null,
+    "beats": [
+      "Wealth Management",
+      "Financial Advisors",
+      "RIAs",
+      "Asset Management",
+      "Investments",
+      "Financial Planning",
+      "Retirement",
+      "Fintech",
+      "Wealthtech",
+      "Advisor Technology",
+      "M&A",
+      "Private Equity",
+      "Venture Capital",
+      "Banking",
+      "Insurance",
+      "Regulation & Compliance",
+      "Practice Management",
+      "Personal Finance",
+      "Family Offices",
+      "Markets & Economy",
+      "Cryptocurrency",
+      "Alternative Investments",
+      "General Business"
+    ],
+    "beatDescription": "",
+    "reporterType": "podcast",
+    "confidence": 0,
+    "status": "needs_review",
+    "sources": [],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "approved",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-17T16:27:50.460Z",
+    "reporterId": "REP-000076",
+    "currentReporterType": "reporter",
+    "currentBeats": "",
+    "currentNotes": ""
+  },
+  {
+    "proposalId": "ENR-dd6c60fd",
+    "currentName": "Weld Royal",
+    "currentOutlet": "Barron's",
+    "reporterName": "Weld Royal",
+    "outlet": "Barron's",
+    "email": null,
+    "beats": [
+      "Wealth Management",
+      "Financial Planning",
+      "Financial Advisors",
+      "RIAs",
+      "Practice Management",
+      "Advisor Technology",
+      "Personal Finance"
+    ],
+    "beatDescription": "",
+    "reporterType": "reporter",
+    "confidence": 0,
+    "status": "needs_review",
+    "sources": [],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "approved",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-17T16:27:50.464Z",
+    "reporterId": "REP-000077",
+    "currentReporterType": "reporter",
+    "currentBeats": "",
+    "currentNotes": ""
+  },
+  {
+    "proposalId": "ENR-54a7236a",
+    "currentName": "Cassidy Cavanaugh",
+    "currentOutlet": "Mergers & Acquisitions",
+    "reporterName": "Cassidy Cavanaugh",
+    "outlet": "Mergers & Acquisitions",
+    "email": null,
+    "beats": [],
+    "beatDescription": "",
+    "reporterType": "reporter",
+    "confidence": 0,
+    "status": "needs_review",
+    "sources": [],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "pending",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-17T16:29:19.160Z",
+    "reporterId": "REP-000078",
+    "currentReporterType": "reporter",
+    "currentBeats": "",
+    "currentNotes": ""
+  },
+  {
+    "proposalId": "ENR-5f3f018e",
+    "currentName": "Kenneth Corbin",
+    "currentOutlet": "Barron's",
+    "reporterName": "Kenneth Corbin",
+    "outlet": "Barron's",
+    "email": null,
+    "beats": [
+      "Wealth Management",
+      "Financial Planning",
+      "Retirement",
+      "Personal Finance",
+      "Regulation & Compliance",
+      "Investments"
+    ],
+    "beatDescription": "",
+    "reporterType": "reporter",
+    "confidence": 0,
+    "status": "needs_review",
+    "sources": [],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "approved",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-17T16:29:19.163Z",
+    "reporterId": "REP-000079",
+    "currentReporterType": "reporter",
+    "currentBeats": "",
+    "currentNotes": ""
+  },
+  {
+    "proposalId": "ENR-5c7e5f8c",
+    "currentName": "Kathleen Laverty",
+    "currentOutlet": "FundFire",
+    "reporterName": "Kathleen Laverty",
+    "outlet": "FundFire",
+    "email": null,
+    "beats": [
+      "Wealth Management",
+      "RIAs",
+      "M&A",
+      "Private Equity",
+      "Asset Management",
+      "Investments",
+      "Financial Planning",
+      "Financial Advisors"
+    ],
+    "beatDescription": "",
+    "reporterType": "reporter",
+    "confidence": 0,
+    "status": "needs_review",
+    "sources": [],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "approved",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-17T16:29:48.593Z",
+    "reporterId": "REP-000080",
+    "currentReporterType": "reporter",
+    "currentBeats": "",
+    "currentNotes": ""
+  },
+  {
+    "proposalId": "ENR-fa50106f",
+    "currentName": "Joe Palmisano",
+    "currentOutlet": "Connect Money",
+    "reporterName": "Joe Palmisano",
+    "outlet": "Connect Money",
+    "email": null,
+    "beats": [
+      "Wealth Management",
+      "Financial Advisors",
+      "RIAs",
+      "Asset Management",
+      "Investments",
+      "Financial Planning",
+      "Retirement",
+      "Fintech",
+      "Wealthtech",
+      "Advisor Technology",
+      "M&A",
+      "Private Equity",
+      "Venture Capital",
+      "Banking",
+      "Insurance",
+      "Regulation & Compliance",
+      "Practice Management",
+      "Personal Finance",
+      "Family Offices",
+      "Markets & Economy",
+      "Cryptocurrency",
+      "Alternative Investments",
+      "General Business"
+    ],
+    "beatDescription": "",
+    "reporterType": "reporter",
+    "confidence": 0,
+    "status": "needs_review",
+    "sources": [],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "approved",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-17T16:29:48.596Z",
+    "reporterId": "REP-000081",
+    "currentReporterType": "reporter",
+    "currentBeats": "",
+    "currentNotes": ""
+  },
+  {
+    "proposalId": "ENR-df6a281e",
+    "currentName": "n/a",
+    "currentOutlet": "With Intelligence",
+    "reporterName": "n/a",
+    "outlet": "With Intelligence",
+    "email": null,
+    "beats": [],
+    "beatDescription": "",
+    "reporterType": "reporter",
+    "confidence": 0,
+    "status": "placeholder",
+    "sources": [],
+    "reasoningSummary": "The coverage record contains a placeholder reporter value and will not become an individual reporter.",
+    "approvalStatus": "pending",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-17T16:30:08.852Z"
+  },
+  {
+    "proposalId": "ENR-0d829a38",
+    "currentName": "n/a",
+    "currentOutlet": "MarketsGroup",
+    "reporterName": "n/a",
+    "outlet": "MarketsGroup",
+    "email": null,
+    "beats": [],
+    "beatDescription": "",
+    "reporterType": "reporter",
+    "confidence": 0,
+    "status": "placeholder",
+    "sources": [],
+    "reasoningSummary": "The coverage record contains a placeholder reporter value and will not become an individual reporter.",
+    "approvalStatus": "pending",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-17T16:30:08.852Z"
+  },
+  {
+    "proposalId": "ENR-88d61abb",
+    "currentName": "Saqib Iqbal Ahmed and Lewis Krauskopf",
+    "currentOutlet": "Reuters",
+    "reporterName": "Saqib Iqbal Ahmed and Lewis Krauskopf",
+    "outlet": "Reuters",
+    "email": null,
+    "beats": [
+      "Markets & Economy"
+    ],
+    "beatDescription": "",
+    "reporterType": "reporter",
+    "confidence": 0,
+    "status": "needs_review",
+    "sources": [],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "pending",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-17T16:30:08.854Z",
+    "reporterId": "REP-000082",
+    "currentReporterType": "reporter",
+    "currentBeats": "",
+    "currentNotes": ""
+  },
+  {
+    "proposalId": "ENR-b00805d8",
+    "currentName": "Laura Matthews",
+    "currentOutlet": "Reuters",
+    "reporterName": "Laura Matthews",
+    "outlet": "Reuters",
+    "email": null,
+    "beats": [
+      "Markets & Economy",
+      "Cryptocurrency",
+      "General Business"
+    ],
+    "beatDescription": "",
+    "reporterType": "reporter",
+    "confidence": 0,
+    "status": "needs_review",
+    "sources": [],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "approved",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-17T16:30:08.856Z",
+    "reporterId": "REP-000083",
+    "currentReporterType": "reporter",
+    "currentBeats": "",
+    "currentNotes": ""
+  },
+  {
+    "proposalId": "ENR-5327b8d6",
+    "currentName": "Christine Idzelis",
+    "currentOutlet": "MarketWatch",
+    "reporterName": "Christine Idzelis",
+    "outlet": "MarketWatch",
+    "email": null,
+    "beats": [
+      "Markets & Economy",
+      "Investments",
+      "Fintech",
+      "Cryptocurrency"
+    ],
+    "beatDescription": "",
+    "reporterType": "reporter",
+    "confidence": 0,
+    "status": "needs_review",
+    "sources": [],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "approved",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-17T16:30:38.725Z",
+    "reporterId": "REP-000084",
+    "currentReporterType": "reporter",
+    "currentBeats": "",
+    "currentNotes": ""
+  },
+  {
+    "proposalId": "ENR-afabceb1",
+    "currentName": "n/a",
+    "currentOutlet": "Financial Times",
+    "reporterName": "n/a",
+    "outlet": "Financial Times",
+    "email": null,
+    "beats": [],
+    "beatDescription": "",
+    "reporterType": "reporter",
+    "confidence": 0,
+    "status": "placeholder",
+    "sources": [],
+    "reasoningSummary": "The coverage record contains a placeholder reporter value and will not become an individual reporter.",
+    "approvalStatus": "pending",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-17T16:30:38.730Z"
+  },
+  {
+    "proposalId": "ENR-e66a2b75",
+    "currentName": "Sean Conlon",
+    "currentOutlet": "CNBC",
+    "reporterName": "Sean Conlon",
+    "outlet": "CNBC",
+    "email": null,
+    "beats": [
+      "Markets & Economy",
+      "Personal Finance",
+      "Fintech",
+      "Financial Advisors"
+    ],
+    "beatDescription": "",
+    "reporterType": "reporter",
+    "confidence": 0,
+    "status": "needs_review",
+    "sources": [],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "approved",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-17T16:31:39.898Z",
+    "reporterId": "REP-000085",
+    "currentReporterType": "reporter",
+    "currentBeats": "",
+    "currentNotes": ""
+  },
+  {
+    "proposalId": "ENR-4bc000de",
+    "currentName": "Lois Weiss",
+    "currentOutlet": "Commercial Observer",
+    "reporterName": "Lois Weiss",
+    "outlet": "Commercial Observer",
+    "email": null,
+    "beats": [
+      "Markets & Economy",
+      "General Business",
+      "Regulation & Compliance"
+    ],
+    "beatDescription": "",
+    "reporterType": "reporter",
+    "confidence": 0,
+    "status": "needs_review",
+    "sources": [],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "approved",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-17T16:31:39.900Z",
+    "reporterId": "REP-000086",
+    "currentReporterType": "reporter",
+    "currentBeats": "",
+    "currentNotes": ""
+  },
+  {
+    "proposalId": "ENR-ababf346",
+    "currentName": "Lois Weiss",
+    "currentOutlet": "New York Post",
+    "reporterName": "Lois Weiss",
+    "outlet": "New York Post",
+    "email": null,
+    "beats": [
+      "Markets & Economy",
+      "General Business",
+      "Banking",
+      "Regulation & Compliance"
+    ],
+    "beatDescription": "",
+    "reporterType": "reporter",
+    "confidence": 0,
+    "status": "needs_review",
+    "sources": [],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "approved",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-17T16:32:55.095Z",
+    "currentReporterType": "reporter",
+    "currentBeats": "",
+    "currentNotes": ""
+  },
+  {
+    "proposalId": "ENR-849809cc",
+    "currentName": "Eric Revell",
+    "currentOutlet": "FOX Business",
+    "reporterName": "Eric Revell",
+    "outlet": "FOX Business",
+    "email": null,
+    "beats": [],
+    "beatDescription": "",
+    "reporterType": "reporter",
+    "confidence": 0,
+    "status": "needs_review",
+    "sources": [],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "pending",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-17T16:32:55.098Z",
+    "reporterId": "REP-000087",
+    "currentReporterType": "reporter",
+    "currentBeats": "",
+    "currentNotes": ""
+  },
+  {
+    "proposalId": "ENR-3e2f8411",
+    "currentName": "David Nusbuam",
+    "currentOutlet": "LA Times",
+    "reporterName": "David Nusbaum",
+    "outlet": "LA Times",
+    "email": null,
+    "beats": [
+      "M&A",
+      "Banking"
+    ],
+    "beatDescription": "",
+    "reporterType": "reporter",
+    "confidence": 0,
+    "status": "needs_review",
+    "sources": [],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "pending",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-17T16:33:24.212Z",
+    "reporterId": "REP-000088",
+    "currentReporterType": "reporter",
+    "currentBeats": "",
+    "currentNotes": ""
+  },
+  {
+    "proposalId": "ENR-57e86253",
+    "currentName": "n/a",
+    "currentOutlet": "FA Magazine",
+    "reporterName": "n/a",
+    "outlet": "FA Magazine",
+    "email": null,
+    "beats": [],
+    "beatDescription": "",
+    "reporterType": "reporter",
+    "confidence": 0,
+    "status": "placeholder",
+    "sources": [],
+    "reasoningSummary": "The coverage record contains a placeholder reporter value and will not become an individual reporter.",
+    "approvalStatus": "pending",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-17T16:33:24.214Z"
+  },
+  {
+    "proposalId": "ENR-ec77ac17",
+    "currentName": "Geoffrey Morgan",
+    "currentOutlet": "Bloomberg",
+    "reporterName": "Geoffrey Morgan",
+    "outlet": "Bloomberg",
+    "email": null,
+    "beats": [
+      "Investments",
+      "Markets & Economy",
+      "M&A",
+      "General Business"
+    ],
+    "beatDescription": "",
+    "reporterType": "reporter",
+    "confidence": 0,
+    "status": "needs_review",
+    "sources": [],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "approved",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-17T16:33:52.910Z",
+    "reporterId": "REP-000089",
+    "currentReporterType": "reporter",
+    "currentBeats": "",
+    "currentNotes": ""
+  },
+  {
+    "proposalId": "ENR-6b1e7da5",
+    "currentName": "Kristen Olivieri",
+    "currentOutlet": "Wealth Reimagined",
+    "reporterName": "Kristen Olivieri",
+    "outlet": "Wealth Reimagined",
+    "email": null,
+    "beats": [
+      "Wealth Management",
+      "Family Offices",
+      "RIAs",
+      "Financial Advisors",
+      "Asset Management",
+      "Investments",
+      "Financial Planning"
+    ],
+    "beatDescription": "",
+    "reporterType": "reporter",
+    "confidence": 0,
+    "status": "needs_review",
+    "sources": [],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "approved",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-17T16:33:52.914Z",
+    "reporterId": "REP-000090",
+    "currentReporterType": "reporter",
+    "currentBeats": "",
+    "currentNotes": ""
+  },
+  {
+    "proposalId": "ENR-e3decbf8",
+    "currentName": "Cameron Rogers",
+    "currentOutlet": "Emerging Manager Monthly",
+    "reporterName": "Cameron Rogers",
+    "outlet": "Emerging Manager Monthly",
+    "email": null,
+    "beats": [
+      "Wealth Management",
+      "Financial Advisors",
+      "RIAs",
+      "Asset Management",
+      "Investments",
+      "Financial Planning",
+      "Retirement",
+      "Fintech",
+      "Wealthtech",
+      "Advisor Technology",
+      "Practice Management",
+      "Family Offices",
+      "Markets & Economy",
+      "Regulation & Compliance"
+    ],
+    "beatDescription": "",
+    "reporterType": "reporter",
+    "confidence": 0,
+    "status": "needs_review",
+    "sources": [],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "approved",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-17T16:34:28.107Z",
+    "reporterId": "REP-000091",
+    "currentReporterType": "reporter",
+    "currentBeats": "",
+    "currentNotes": ""
+  },
+  {
+    "proposalId": "ENR-90ba2103",
+    "currentName": "Hannah Erin Lang",
+    "currentOutlet": "WSJ",
+    "reporterName": "Hannah Erin Lang",
+    "outlet": "WSJ",
+    "email": null,
+    "beats": [
+      "Markets & Economy",
+      "Personal Finance",
+      "Retirement",
+      "Fintech",
+      "Cryptocurrency",
+      "Banking",
+      "Investments",
+      "Financial Planning",
+      "Regulation & Compliance"
+    ],
+    "beatDescription": "",
+    "reporterType": "reporter",
+    "confidence": 0,
+    "status": "needs_review",
+    "sources": [],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "approved",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-17T16:34:28.109Z",
+    "reporterId": "REP-000092",
+    "currentReporterType": "reporter",
+    "currentBeats": "",
+    "currentNotes": ""
+  },
+  {
+    "proposalId": "ENR-cf565fd9",
+    "currentName": "Xavier Martinez",
+    "currentOutlet": "WSJ",
+    "reporterName": "Xavier Martinez",
+    "outlet": "WSJ",
+    "email": null,
+    "beats": [],
+    "beatDescription": "",
+    "reporterType": "reporter",
+    "confidence": 0,
+    "status": "needs_review",
+    "sources": [],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "pending",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-17T16:35:43.376Z",
+    "reporterId": "REP-000093",
+    "currentReporterType": "reporter",
+    "currentBeats": "",
+    "currentNotes": ""
+  },
+  {
+    "proposalId": "ENR-5363e7eb",
+    "currentName": "Cristina Charkboul",
+    "currentOutlet": "Los Angeles Business Journal",
+    "reporterName": "Cristina Charkboul",
+    "outlet": "Los Angeles Business Journal",
+    "email": null,
+    "beats": [],
+    "beatDescription": "",
+    "reporterType": "reporter",
+    "confidence": 0,
+    "status": "needs_review",
+    "sources": [],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "pending",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-17T16:35:43.380Z",
+    "reporterId": "REP-000094",
+    "currentReporterType": "reporter",
+    "currentBeats": "",
+    "currentNotes": ""
+  },
+  {
+    "proposalId": "ENR-610637b0",
+    "currentName": "Ali Hibbs",
+    "currentOutlet": "Markets Group",
+    "reporterName": "Ali Hibbs",
+    "outlet": "Markets Group",
+    "email": null,
+    "beats": [
+      "Wealth Management",
+      "RIAs",
+      "Financial Advisors",
+      "Investments",
+      "M&A"
+    ],
+    "beatDescription": "",
+    "reporterType": "reporter",
+    "confidence": 0,
+    "status": "needs_review",
+    "sources": [],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "approved",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-17T16:36:17.735Z",
+    "reporterId": "REP-000095",
+    "currentReporterType": "reporter",
+    "currentBeats": "",
+    "currentNotes": ""
+  },
+  {
+    "proposalId": "ENR-91fb8fa1",
+    "currentName": "Isabelle Lee",
+    "currentOutlet": "Bloomberg News",
+    "reporterName": "Isabelle Lee",
+    "outlet": "Bloomberg News",
+    "email": null,
+    "beats": [
+      "Markets & Economy",
+      "Cryptocurrency",
+      "Investments"
+    ],
+    "beatDescription": "",
+    "reporterType": "reporter",
+    "confidence": 0,
+    "status": "needs_review",
+    "sources": [],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "approved",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-17T16:36:17.739Z",
+    "reporterId": "REP-000096",
+    "currentReporterType": "reporter",
+    "currentBeats": "",
+    "currentNotes": ""
+  },
+  {
+    "proposalId": "ENR-b4fa4e27",
+    "currentName": "Noel Randwich",
+    "currentOutlet": "Reuters",
+    "reporterName": "Noel Randwich",
+    "outlet": "Reuters",
+    "email": null,
+    "beats": [],
+    "beatDescription": "",
+    "reporterType": "reporter",
+    "confidence": 0,
+    "status": "needs_review",
+    "sources": [],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "pending",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-17T16:36:57.142Z",
+    "reporterId": "REP-000097",
+    "currentReporterType": "reporter",
+    "currentBeats": "",
+    "currentNotes": ""
+  },
+  {
+    "proposalId": "ENR-6acf7be2",
+    "currentName": "n/a",
+    "currentOutlet": "Real Assets Adviser",
+    "reporterName": "n/a",
+    "outlet": "Real Assets Adviser",
+    "email": null,
+    "beats": [],
+    "beatDescription": "",
+    "reporterType": "reporter",
+    "confidence": 0,
+    "status": "placeholder",
+    "sources": [],
+    "reasoningSummary": "The coverage record contains a placeholder reporter value and will not become an individual reporter.",
+    "approvalStatus": "pending",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-17T16:36:57.144Z"
+  },
+  {
+    "proposalId": "ENR-7d72505d",
+    "currentName": "Gregg Greenberg",
+    "currentOutlet": "InvestmentNews",
+    "reporterName": "Gregg Greenberg",
+    "outlet": "InvestmentNews",
+    "email": null,
+    "beats": [],
+    "beatDescription": "",
+    "reporterType": "reporter",
+    "confidence": 0,
+    "status": "needs_review",
+    "sources": [],
+    "reasoningSummary": "Research evidence was collected, but an AI provider is not configured to verify identity and beats.",
+    "approvalStatus": "pending",
+    "authoritativeSource": false,
+    "model": "openrouter/openai/gpt-oss-20b:free",
+    "createdAt": "2026-08-17T16:37:10.847Z",
+    "reporterId": "REP-000098",
+    "currentReporterType": "reporter",
+    "currentBeats": "",
+    "currentNotes": ""
+  }
+]

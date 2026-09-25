@@ -1,0 +1,182 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "build-check",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"build"
+			]
+		},
+		{
+			"label": "verify-report-runtime",
+			"type": "shell",
+			"command": "C:\\Users\\Sam\\node-portable\\node-v22.23.1-win-x64\\node.exe",
+			"args": [
+				"--import",
+				"tsx",
+				"src/server.ts"
+			],
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "verify-local-coverage",
+			"type": "shell",
+			"command": "C:\\Users\\Sam\\node-portable\\node-v22.23.1-win-x64\\node.exe",
+			"args": [
+				"--import",
+				"tsx",
+				"--input-type=module",
+				"-e",
+				"import { StructuredStore } from './src/store.ts'; import { parseInput } from './src/parser.ts'; import { applyCoverageDefaults } from './src/coverage-resolvers.ts'; import { proposeCoverageUrl } from './src/url-enrichment.ts'; const store=new StructuredStore('./data/store.json'); await store.load(); const opto=store.snapshot.coverage.filter(r=>r.clientName==='Opto'); const source=opto.find(r=>r.articleTitle==='How Advisors Are Putting Private Markets to Use'); const raw={Date:source.publicationDate,Title:source.articleTitle,Client:source.clientName,'Media Outlet':source.outlet,Reporter:source.reporterName,Spokesperson:source.spokesperson}; const parsed=parseInput(JSON.stringify(raw),'derived-from-store.json').items[0]; const resolved=applyCoverageDefaults(parsed,[{name:source.outlet,uvm:7400000,link:'https://example.test'}]); const urlCheck=await proposeCoverageUrl({...source,articleUrl:'https://existing.test/article'},undefined); const allowed=new Set(['Earned Coverage','Contributed Content','Podcast Interview','Awards & Recognition','Speaking Engagement','Newsletter Inclusion','Press Release','Press Release & Earned Coverage Syndication','Missed Opportunity']); const bad=store.snapshot.coverage.filter(r=>!allowed.has(r.coverageType)||r.sentiment!=='Positive'||r.status!=='Live'||(r.articleUrl&&r.articleUrl===r.articleTitle)); console.log(JSON.stringify({storeCount:store.snapshot.coverage.length,optoCount:opto.length,sourceId:source.id,parsed:{publicationDate:parsed.publicationDate,articleTitle:parsed.articleTitle,clientName:parsed.clientName,outlet:parsed.outlet,reporterName:parsed.reporterName,spokesperson:parsed.spokesperson,articleUrl:parsed.articleUrl},resolved:{coverageType:resolved.coverageType,sentiment:resolved.sentiment,status:resolved.status,reach:resolved.reach},explicitReach:applyCoverageDefaults({...parsed,reach:123},[{name:source.outlet,uvm:7400000,link:''}]).reach,urlPreserved:urlCheck.proposedUrl,badCanonicalCount:bad.length}));"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "run-coverage-verification",
+			"type": "shell",
+			"command": "C:\\Users\\Sam\\node-portable\\node-v22.23.1-win-x64\\node.exe",
+			"args": [
+				"--import",
+				"tsx",
+				"src/verify-coverage.ts"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "run-coverage-verification",
+			"type": "shell",
+			"command": "C:\\Users\\Sam\\node-portable\\node-v22.23.1-win-x64\\node.exe",
+			"args": [
+				"--import",
+				"tsx",
+				"src/verify-coverage.ts"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "run-coverage-verification",
+			"type": "shell",
+			"command": "C:\\Users\\Sam\\node-portable\\node-v22.23.1-win-x64\\node.exe",
+			"args": [
+				"--import",
+				"tsx",
+				"src/verify-coverage.ts"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "build-nodepath",
+			"type": "shell",
+			"command": "C:\\Users\\Sam\\node-portable\\node-v22.23.1-win-x64\\node.exe",
+			"args": [
+				"node_modules/typescript/bin/tsc",
+				"--noEmit"
+			],
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc"
+			]
+		},
+		{
+			"label": "build-nodepath",
+			"type": "shell",
+			"command": "C:\\Users\\Sam\\node-portable\\node-v22.23.1-win-x64\\node.exe",
+			"args": [
+				"node_modules/typescript/bin/tsc",
+				"--noEmit"
+			],
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc"
+			]
+		},
+		{
+			"label": "run-coverage-verification",
+			"type": "shell",
+			"command": "C:\\Users\\Sam\\node-portable\\node-v22.23.1-win-x64\\node.exe",
+			"args": [
+				"--import",
+				"tsx",
+				"src/verify-coverage.ts"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "verify-current-server",
+			"type": "shell",
+			"command": "C:\\Windows\\System32\\cmd.exe",
+			"args": [
+				"/d",
+				"/c",
+				"set PORT=3124&&C:\\Users\\Sam\\node-portable\\node-v22.23.1-win-x64\\node.exe --import tsx src/server.ts"
+			],
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "find-port-process",
+			"type": "shell",
+			"command": "C:\\Windows\\System32\\cmd.exe",
+			"args": [
+				"/d",
+				"/c",
+				"netstat -ano | findstr :3000"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "stop-existing-server",
+			"type": "shell",
+			"command": "C:\\Windows\\System32\\taskkill.exe",
+			"args": [
+				"/PID",
+				"29892",
+				"/F"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "build-check-portable-npm",
+			"type": "shell",
+			"command": "C:\\Users\\Sam\\node-portable\\node-v22.23.1-win-x64\\npm.cmd",
+			"args": [
+				"run",
+				"build"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "build-check-portable-path",
+			"type": "shell",
+			"command": "C:\\Windows\\System32\\cmd.exe",
+			"args": [
+				"/d",
+				"/c",
+				"set PATH=C:\\Users\\Sam\\node-portable\\node-v22.23.1-win-x64;%PATH%&&npm run build"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "diff-google-server",
+			"type": "shell",
+			"command": "C:\\Windows\\System32\\cmd.exe",
+			"args": [
+				"/d",
+				"/c",
+				"git diff -- src/google.ts src/server.ts"
+			],
+			"isBackground": false
+		}
+	]
+}
