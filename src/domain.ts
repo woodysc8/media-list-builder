@@ -7,12 +7,18 @@ export type IngestionSource =
   | "Text";
 
 export type ReporterType =
+  | ""
   | "reporter"
   | "podcast"
   | "influencer"
-  | "broadcast";
+  | "broadcast"
+  | "broadcast tv"
+  | "broadcast radio"
+  | "newsletter"
+  | (string & {});
 
 export type ReporterStatus =
+  | ""
   | "Active"
   | "Inactive"
   | "Needs Review";
@@ -80,7 +86,10 @@ export const CANONICAL_BEATS: Beat[] = [
 ];
 
 export function normalizeReporterType(value: string | undefined | null): ReporterType {
-  switch (String(value ?? "").trim().toLowerCase()) {
+  const cleaned = String(value ?? "").trim();
+  switch (cleaned.toLowerCase().replace(/[_-]+/g, " ").replace(/\s+/g, " ")) {
+    case "":
+      return "";
     case "journalist":
     case "reporter":
       return "reporter";
@@ -90,8 +99,18 @@ export function normalizeReporterType(value: string | undefined | null): Reporte
       return "influencer";
     case "broadcast":
       return "broadcast";
+    case "tv":
+    case "television":
+    case "broadcast tv":
+    case "broadcast television":
+      return "broadcast tv";
+    case "radio":
+    case "broadcast radio":
+      return "broadcast radio";
+    case "newsletter":
+      return "newsletter";
     default:
-      return "reporter";
+      return cleaned;
   }
 }
 
@@ -175,6 +194,9 @@ export interface ReporterRecord {
    */
   aliases?: string[];
 
+  /** Prior name/outlet identities retained so human edits do not break matching. */
+  identityAliases?: ReporterIdentity[];
+
   email: string;
 
   /**
@@ -197,6 +219,9 @@ export interface ReporterRecord {
    * Human-managed notes that must be preserved independently of AI enrichment.
    */
   notes: string;
+
+  /** Derived from all historical coverage records. */
+  mostRecentArticle: string;
 
   status: ReporterStatus;
 }
@@ -283,6 +308,12 @@ export interface ExtractedCoverage {
   reach: string | number | null;
   rawFields: Record<string, string>;
   topics?: string[];
+}
+
+export interface ReporterIdentity {
+  firstName: string;
+  lastName: string;
+  outlet: string;
 }
 
 export interface UrlResolutionEvidence {

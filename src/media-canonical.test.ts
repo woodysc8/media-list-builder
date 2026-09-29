@@ -19,6 +19,7 @@ import { resolveCoverageUrl, selectCoverageUrlResolutionRecords } from "./url-en
 import { coverageUrlReviewNeedsUpdate, urlReviewNote } from "./google.js";
 import { expectedOutletDomainsFor, matchMasterOutlet } from "./outlet-domain-matching.js";
 import { diagnoseOptoUnresolvedOutletDomains } from "./outlet-domain-diagnostic.js";
+import { buildReporterPreflight, runReadOnlyReporterPreflight } from "./reporter-preflight.js";
 
 const parsed = parseInput(JSON.stringify({
   Client: "Example Client",
@@ -75,7 +76,7 @@ const record: CoverageRecord = {
 const reporter: ReporterRecord = {
   id: "REP-test", firstName: "Thomas", lastName: "Lee", outlet: "Wealth Solutions Report",
   email: "ignored@example.test", reporterType: "reporter", clientsCovered: "Example Client",
-  beats: "", notes: "", status: "Active"
+  beats: "", notes: "", mostRecentArticle: "", status: "Active"
 };
 const masterOutlets: OutletRecord[] = [
   { name: "PitchBook", uvm: null, link: "https://pitchbook.com" },
@@ -111,7 +112,7 @@ assert.deepEqual(REPORTER_REPORT_HEADERS, ["Name", "Outlet", "Email"]);
 assert.deepEqual(reporterReportRow(reporter), ["Thomas Lee", "Wealth Solutions Report", "ignored@example.test"]);
 assert.deepEqual(OUTLET_REPORT_HEADERS, ["Outlet", "Outlet Type"]);
 assert.deepEqual(outletReportRow(record, undefined), ["Wealth Solutions Report", "Trade Publication"]);
-assert.equal(reporterReportKey(reporter), reporterReportKey({ ...reporter, email: "different@example.test" }));
+assert.equal(reporterReportKey(reporter), reporterReportKey({ firstName: reporter.firstName, lastName: reporter.lastName, outlet: reporter.outlet }));
 assert.notEqual(reporterReportKey(reporter), reporterReportKey({ ...reporter, outlet: "Another Outlet" }));
 const contact = { id: "CON-test", clientName: "Example Client", name: "Casey Smith", title: "Director", email: "casey@example.test", phone: "555-0100", notes: "" };
 assert.deepEqual(contactReportRow(contact), ["Casey Smith", "Director", "casey@example.test", "555-0100"]);
@@ -142,6 +143,51 @@ assert.deepEqual(outletDiagnostic, {
   matches: [{ localOutlet: "Citywire RIA", canonicalMasterOutlet: "Citywire", expectedDomains: ["citywire.com"] }],
   unmatchedOutlets: ["Unknown Outlet"]
 });
+
+const preflightReporter: ReporterRecord = {
+  ...reporter, id: "REP-preflight", firstName: "Taylor", lastName: "Green",
+  mostRecentArticle: "", clientsCovered: "", status: "Active", notes: "Local note"
+};
+const preflightCoverage: CoverageRecord = {
+  ...record, id: "COV-preflight", reporterId: "REP-preflight", clientName: "Client B",
+  publicationDate: "2025-03-24"
+};
+const preflight = buildReporterPreflight(
+  { reporters: [preflightReporter], archivedReporters: [], coverage: [preflightCoverage] },
+  { title: "Sheet1", sheetId: 10, values: [["ID", "Outlet", "Reporter First Name", "Reporter Last Name", "Email", "Reporter Type", "Clients Covered", "Beats", "Notes", "Most Recent Article", "Status"]] },
+  { title: "Master Directory (Cleaned)", sheetId: 20, values: [
+    ["ID", "Outlet", "Reporter First Name", "Reporter Last Name", "Email", "Reporter Type", "Clients Covered", "Beats", "Notes", "Most Recent Article", "Status"],
+    ["REP-preflight", "Wealth Solutions Report", "Taylor", "Green", "", "reporter", "Old Client", "", "Gemini note", "2024-01-01", "Active"]
+  ] },
+  new Date("2026-09-24T12:00:00.000Z")
+);
+assert.equal(preflight.spreadsheet.sheet1.sheetId, 10);
+assert.equal(preflight.spreadsheet.cleaned.sheetId, 20);
+assert.equal(preflight.totals.localActiveAfterRecency, 1, "18-month boundary is retained");
+assert.equal(preflight.totals.cleanedIdsMatchingLocal, 1);
+assert.equal(preflight.totals.mostRecentArticleWouldChange, 1);
+assert.equal(preflight.totals.clientsCoveredWouldChange, 1);
+assert.equal(preflight.totals.humanFieldDifferenceRows, 1);
+assert.match(preflight.humanFieldOwnership, /Google\/Gemini-owned/);
+assert.equal(preflight.totals.cleanedRowsWouldBeDeleted, 0);
+let preflightStoreMutations = 0;
+const preflightStore = {
+  get snapshot() { return { reporters: [preflightReporter], archivedReporters: [], coverage: [preflightCoverage] }; },
+  save: () => { preflightStoreMutations += 1; },
+  updateReporter: () => { preflightStoreMutations += 1; },
+  updateCoverage: () => { preflightStoreMutations += 1; }
+};
+let preflightWorkspaceReads = 0;
+await runReadOnlyReporterPreflight({
+  connected: true,
+  reporterPreflight: async (snapshot) => {
+    preflightWorkspaceReads += 1;
+    assert.equal(snapshot.coverage.length, 1);
+    return { readOnly: true };
+  }
+}, preflightStore);
+assert.equal(preflightWorkspaceReads, 1);
+assert.equal(preflightStoreMutations, 0, "read-only preflight never calls store mutation methods");
 const verified = await resolveCoverageUrl(missingUrlRecord, {
   search: async () => [{
     title: "Deals & Recruiting Roundup",

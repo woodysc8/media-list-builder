@@ -1,62 +1,122 @@
 # Media List Builder
 
-The first working slice of the PRCC ingestion system. It accepts labeled text, CSV, and JSON coverage exports, normalizes them into `CoverageRecord` objects, matches clients and reporters, assigns stable `REP-000001`-style reporter IDs, skips duplicates, and can sync resulting records to Google Drive and Google Sheets.
+The existing StreetCred-inspired Media List Builder application. It includes Build Media List, Coverage Report, Admin / Data Management, Google Workspace OAuth, the canonical reporter directory, coverage linking, reporter diagnostics, and Google Sheet export.
 
 ## Run locally
 
-1. Copy `.env.example` to `.env` and set the Google OAuth web-client credentials below.
-2. In Google Cloud, enable Drive API and Sheets API. Add the exact value of `GOOGLE_REDIRECT_URI` as an authorized redirect URI. For the local default, register `http://localhost:3000/oauth2callback`.
-3. Run `npm install`, then `npm run dev`.
-4. Open `http://localhost:3000`, enter the Media List Builder folder ID, and authorize Google.
+1. Use Node.js 22 and run `npm install`.
+2. Copy `.env.example` to `.env`; set the Google OAuth values and keep `PORT=3001` for the existing local URL.
+3. In Google Cloud, enable Drive API and Sheets API and add `http://localhost:3001/oauth2callback` as an authorized redirect URI.
+4. Run `npm start` (or `npm run dev` while developing) and open <http://localhost:3001>.
+5. Enter the Media List Builder Drive folder ID and authorize Google Workspace.
 
-To safely rebuild only the local ingestion state after a bad test run, stop the server and run `npm run reset:local`. The command creates `data/store.backup.json` and refuses to overwrite an existing backup. It then clears local clients, reporters, and coverage records. It does not call Google APIs or modify Drive. After restarting and authorizing, the existing Master Reporter List is loaded into the local reporter store.
+The local application continues to use `data/store.json` and the other `data/*.json` files. `.env` is not overwritten by deployment changes. `npm run reset:local` remains a local-only reset operation.
 
-The OAuth scopes are `drive.metadata.readonly`, `drive.file`, and `spreadsheets`. The configured root folder is the only Drive location used by the adapter. The root must contain `clients` and the existing `Master Reporter List`; the reporter sheet's eight columns are preserved.
+## Environment variables
 
-## Google Cloud and environment configuration
+Copy the placeholders from `.env.example`. Never commit `.env`, `.env.local`, OAuth client secrets, or Blob credentials.
 
-In Google Cloud Console:
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `PORT` | Local only | Local Express port; use `3001`. Vercel supplies its own request runtime. |
+| `GOOGLE_CLIENT_ID` | For Google | Google OAuth web client ID. |
+| `GOOGLE_CLIENT_SECRET` | For Google | Google OAuth web client secret; server-side only. |
+| `GOOGLE_REDIRECT_URI` | For Google | Exact OAuth callback URL. Local: `http://localhost:3001/oauth2callback`; production: `https://<your-domain>/oauth2callback`. |
+| `APP_ACCESS_PASSWORD` | Vercel required | Password protecting the app and API. Use a long unique value. Optional locally. |
+| `AI_API_KEY` | Optional | Existing AI reporter-enrichment provider key. |
+| `AI_MODEL` | Optional | Existing AI model name. |
+| `AI_BASE_URL` | Optional | Existing AI-compatible endpoint. |
+| `SEARCH_API_KEY` | Optional | Existing search provider key for enrichment and URL resolution. |
+| `SEARCH_PROVIDER` | Optional | `tavily` or `serper` when a search key is set. |
+| `ENRICHMENT_CONCURRENCY` | Optional | Existing enrichment concurrency setting. |
+| `DATA_FILE` | Local override only | Alternate local path to the JSON store. Leave unset on Vercel. |
+| `APP_CONFIG_FILE` | Local override only | Alternate local app configuration path. Leave unset on Vercel. |
+| `GOOGLE_AUTH_FILE` | Local override only | Alternate local server-side Google credential path. Leave unset on Vercel. |
+| `REPORTER_PREFLIGHT_READ_ONLY` | Optional diagnostics | Set to `1` only for read-only reporter preflight operation. |
+| `MEDIA_LIST_BUILDER_URL` | Optional migration CLI | Base URL for the explicit canonical-beat migration command; defaults to `http://localhost:3001`. |
 
-1. Select or create a Google Cloud project.
-2. Enable **Google Drive API** and **Google Sheets API**.
-3. Configure the OAuth consent screen. Add the Google account that will use the local app as a test user if the app is in testing mode.
-4. Create an OAuth client with application type **Web application**.
-5. Under **Authorized redirect URIs**, add exactly:
+### Local OAuth callback
 
-	`http://localhost:3000/oauth2callback`
-
-	If you change `GOOGLE_REDIRECT_URI`, register that exact replacement instead. The scheme, host, port, path, and trailing slash must match.
-
-Set these values in `.env`:
+In `.env`, set:
 
 ```dotenv
-PORT=3000
-GOOGLE_CLIENT_ID=your-web-client-id.apps.googleusercontent.com
-GOOGLE_CLIENT_SECRET=your-web-client-secret
-GOOGLE_REDIRECT_URI=http://localhost:3000/oauth2callback
+PORT=3001
+GOOGLE_REDIRECT_URI=http://localhost:3001/oauth2callback
 ```
 
-The app sends `GOOGLE_REDIRECT_URI` explicitly in the authorization request and uses its URL path for the Express callback route. Do not put a Google password in `.env`; only use the OAuth client ID and client secret issued by Google Cloud.
+Register that exact URL in the Google Cloud OAuth client. The callback path is taken from this configured URI.
 
-## Input shape
+### Vercel OAuth callback
 
-CSV and JSON fields may be named `client`, `reporter`, `outlet`, `date`, `articleTitle`/`title`, `articleUrl`/`url`, and `topics`. Plain text uses labeled blocks separated by blank lines:
+Add the production domain in Vercel first, then set `GOOGLE_REDIRECT_URI` in the Vercel project to the exact URL, for example `https://<your-production-domain>/oauth2callback`. Register the same URL in the Google Cloud OAuth client. Do not use the temporary preview domain for the production variable. To switch environments, change `.env` locally and the Vercel environment variable independently; both URIs can be registered with the same Google OAuth client.
 
-```text
-Client: Falcon Wealth
-Reporter: Jane Smith
-Outlet: InvestmentNews
-Date: 2026-08-07
-Article Title: RIA Consolidation Accelerates
-Article URL: https://example.com/article
+## Vercel architecture and persistent storage
+
+Vercel runs the existing Express application exported by `src/server.ts` as a Node.js Function. The same file starts Express only when executed directly, so local `npm start` remains a regular long-running server. Vercel serves files under `public/` as static assets and sends application/API requests to the Express function. `vercel.json` includes the existing `data/` and `public/` files in the function bundle for fallback reads and the Express fallback page.
+
+Vercel's function filesystem is not durable. The application therefore uses a **private Vercel Blob store** for mutable JSON state in production. The existing `data/store.json` and enrichment files are the seed source; they are not committed by this project because `data/*.json` is ignored and may contain reporter/contact information.
+
+The explicit `npm run seed:vercel-state` command uploads the current local store and enrichment state to the private Blob paths under `media-list-builder/data/`. Existing blobs are skipped; the command never overwrites them. Run this once after connecting the Blob store and before the first production deploy. It does not upload Google OAuth credentials. Keep the Blob store private.
+
+On Vercel, connect the private Blob store to this project. Vercel supplies `BLOB_STORE_ID` and short-lived OIDC credentials to the function automatically. No database is used. Local execution continues to read and write normal files. If the production store blob is absent, startup fails with a message to seed it instead of silently creating an empty production store.
+
+Vercel Blob stores JSON snapshots; this matches the application's existing single-store design and is intended for this internal, low-concurrency workflow. Avoid simultaneous bulk imports or concurrent admin edits from multiple operators.
+
+Google authorization state uses a short-lived HTTP-only, SameSite=Lax cookie. Authorized Google credentials are persisted only in the private Blob store (or the ignored local `data/google-auth.json` file); they are never returned to browser JavaScript or logged. On warm/cold Vercel instances the server reloads the persisted credentials and configured Drive folder. `APP_ACCESS_PASSWORD` gates API access with a short-lived signed, HTTP-only session cookie. The browser prompts for this password when its first API request is challenged; it does not retain the password or receive Google credentials. Anonymous visitors cannot use the server-side Google connection or read directory/coverage data.
+
+## Deploy to Vercel
+
+1. Push this repository to the Git provider connected to Vercel, or link it using the Vercel CLI.
+2. In the Vercel project, create a **private** Blob store and connect it to the project for Production (and Preview if you will use Preview deployments).
+3. Locally, link the project and pull its environment into the ignored `.env.local` file:
+
+   ```sh
+   vercel link
+   vercel env pull .env.local
+   ```
+
+4. Before the first deploy, seed the private Blob store from the existing local `data/*.json` state:
+
+   ```sh
+   npm run seed:vercel-state
+   ```
+
+   This is an explicit one-time state copy. Review its output and confirm the store and enrichment state were seeded. It skips any existing Blob object to avoid overwriting production data.
+
+5. Add these Vercel **Production** environment variables:
+
+   ```text
+   GOOGLE_CLIENT_ID
+   GOOGLE_CLIENT_SECRET
+   GOOGLE_REDIRECT_URI=https://<your-production-domain>/oauth2callback
+   APP_ACCESS_PASSWORD
+   ```
+
+   Add the AI/search variables only if those existing features are needed. Do not set `DATA_FILE`, `APP_CONFIG_FILE`, or `GOOGLE_AUTH_FILE` on Vercel. The connected Blob store supplies `BLOB_STORE_ID` and OIDC access automatically.
+
+6. Add the production callback URL to the Google Cloud OAuth web client’s authorized redirect URIs. After Vercel assigns the domain and environment variables are set, deploy with `vercel --prod` or deploy from the connected Git repository.
+7. Open the production domain. On the first API request, the app prompts for `APP_ACCESS_PASSWORD`; then configure the Drive folder and connect Google Workspace from the application. Google OAuth redirects back to the configured production callback, and the connection survives function restarts.
+8. For local work, keep `.env` pointed at localhost. Local and production callbacks can both be registered with the Google OAuth client; switching does not require changing application code.
+
+The deployed application continues to use `Master Directory (Cleaned)` as the authoritative reporter universe when Google is connected. It does not merge local reporters with Google reporters, and Coverage does not create reporter candidates. If Google is disconnected, the explicit local store fallback remains available from the seeded persistent store. Filtering, canonical beat taxonomy, reporter identities, Coverage behavior, and the existing nine Google export columns are unchanged.
+
+## Google Workspace requirements
+
+Enable Google Drive API and Google Sheets API. The authorized account needs access to the configured root Drive folder, its `clients` folder, `Master Reporter List`, and the optional `Master Outlet Sheet`. The app uses `Sheet1` for raw reporter staging and `Master Directory (Cleaned)` for the authoritative reporter directory. Export creates a separate media-list spreadsheet with the existing columns:
+
+1. Owner/Date Pitched
+2. Outlet
+3. Reporter First Name
+4. Reporter Last Name
+5. Email
+6. Reporter Type
+7. Clients Covered
+8. Profile
+9. Notes
+
+## Validation
+
+```sh
+npm test
+npm run build
 ```
-
-The parser is deliberately source-agnostic. A PDF extractor or model-backed extractor can produce the same `ExtractedCoverage[]` contract without changing matching, deduplication, persistence, or outputs.
-
-## AI Reporter Enrichment
-
-Reporter enrichment is separate from ingestion. `POST /api/enrich/reporters` researches unique reporter/outlet pairs and writes proposals, cache, and audit data under `data/`; it does not write Google. Placeholder reporters become `placeholder` proposals, while uncertain identities remain `needs_review`.
-
-Configure providers in `.env` with `AI_API_KEY`, `AI_MODEL`, optional `AI_BASE_URL`, `SEARCH_API_KEY`, `SEARCH_PROVIDER` (`tavily` or `serper` currently), and `ENRICHMENT_CONCURRENCY`. Search results are cached by normalized reporter and outlet. Use `npm run enrich:dry-run` to generate a local-only report against the current store with external providers disabled.
-
-The browser's **AI Reporter Enrichment** section supports proposal review, edit, approval, and **Apply Approved Changes**. Only approved, verified proposals can write to the existing Master Reporter List, and the existing eight-column schema is preserved.

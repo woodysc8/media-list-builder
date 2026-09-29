@@ -145,6 +145,7 @@ export async function ingest(
             clientsCovered: client.name,
             beats: "",
             notes: "",
+            mostRecentArticle: "",
             status: "Active",
             reporterType: "reporter"
           });

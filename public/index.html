@@ -3,320 +3,123 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PRCC Ingestion Desk</title>
+    <title>Media List Builder</title>
     <link rel="stylesheet" href="/styles.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   </head>
-
   <body>
-    <main class="shell">
-
-      <header class="masthead">
-        <p class="kicker">MEDIA LIST BUILDER / PRCC</p>
-        <h1>Turn coverage notes into a living reporter list.</h1>
-        <p class="lede">
-          One structured ingestion flow for client coverage and your existing
-          Master Reporter List.
-        </p>
-        <div id="status" class="status">Checking workspace...</div>
+    <main class="shell application-shell">
+      <header class="masthead application-header">
+        <div class="header-bar">
+          <a class="brand" href="#view-build" aria-label="Media List Builder home">MEDIA LIST <span>BUILDER</span></a>
+          <nav id="app-navigation" class="app-navigation" aria-label="Main views" role="tablist">
+            <button type="button" class="active" data-app-view="build" aria-controls="view-build" role="tab" aria-selected="true">Build Media List</button>
+            <button type="button" data-app-view="coverage" aria-controls="view-coverage" role="tab" aria-selected="false">Coverage Report</button>
+            <button type="button" data-app-view="admin" aria-controls="view-admin" role="tab" aria-selected="false">Admin / Data Management</button>
+          </nav>
+        </div>
+        <div class="page-intro">
+          <p class="eyebrow">MEDIA INTELLIGENCE / REPORTER RESEARCH</p>
+          <h1><span>BUILD</span><span class="accent">MEDIA LIST</span></h1>
+          <p class="lede">Build a pitch-specific reporter pool from the Master Reporter Directory.</p>
+          <ol class="workflow-steps" aria-label="Media list workflow">
+            <li><span>01</span>Filter reporters</li>
+            <li><span>02</span>Review &amp; select</li>
+            <li><span>03</span>Create Google Sheet</li>
+          </ol>
+          <div id="status" class="status">Checking workspace...</div>
+        </div>
       </header>
 
-      <section class="workspace-grid">
-
-        <article class="panel">
-          <div class="panel-heading">
-            <span class="step">01</span>
-            <div>
-              <h2>Connect the workspace</h2>
-              <p>Point the app at the Media List Builder root.</p>
-            </div>
-          </div>
-
-          <form id="config-form">
-            <label for="root-folder">Google Drive folder ID or URL</label>
-
-            <input
-              id="root-folder"
-              name="rootFolderId"
-              placeholder="Paste the folder ID or full Drive URL"
-              required
-            />
-
-            <button type="submit">
-              Save folder and authorize <span>↗</span>
-            </button>
+      <section id="view-build" class="app-view" data-view-panel="build" role="tabpanel">
+        <section class="results pitch-panel filter-card" id="media-list-builder">
+          <div class="section-heading"><div><p class="eyebrow">PITCH CONTEXT</p><h2>Find relevant reporters</h2></div></div>
+          <form id="pitch-filter-form" class="pitch-filters">
+            <label>Pitch Client<select name="client" aria-label="Pitch Client"><option value="">Select pitch client</option></select></label>
+            <fieldset class="filter-fieldset"><legend>Topics / Beats <small>Select one or more</small></legend><div id="topic-selected-chips" class="selection-chips" aria-live="polite"></div><select id="topic-select" class="filter-select" aria-label="Select topic"><option value="">Select topic</option></select></fieldset>
+            <fieldset class="filter-fieldset"><legend>Similar Clients <small>Select one or more</small></legend><div id="similar-client-selected-chips" class="selection-chips" aria-live="polite"></div><select id="similar-client-select" class="filter-select" aria-label="Select similar client"><option value="">Select similar client</option></select></fieldset>
+            <fieldset class="filter-fieldset reporter-type-field"><legend>Reporter Type <small>Select one or more</small></legend><div id="reporter-type-selected-chips" class="selection-chips" aria-live="polite"></div><select id="reporter-type-select" class="filter-select" aria-label="Select reporter type"><option value="">Select reporter type</option><option value="reporter">Reporter</option><option value="influencer">Influencer</option><option value="podcast">Podcast</option><option value="broadcast tv">Broadcast TV</option><option value="tier 1 media">Tier 1 Media</option></select><p id="reporter-type-review" class="fine-print type-review" hidden></p></fieldset>
+            <label>Status<select name="status"><option value="all">All statuses</option><option>Active</option><option>Inactive</option><option>Needs Review</option></select></label>
+            <button class="primary-action btn" type="submit">Find Reporters <span>→</span></button>
           </form>
+          <p class="fine-print filter-help">Any selected topic, similar-client history, or relevant pitch-client history can qualify a reporter.</p>
+          <div id="reporter-source-summary" class="search-summary" aria-live="polite">Loading reporter source…</div>
+          <div id="search-summary" class="search-summary" aria-live="polite">Loading Master Directory reporters…</div>
+        </section>
 
-          <p class="fine-print">
-            OAuth requests Drive file creation and spreadsheet access.
-            Your Google password never passes through this app.
-          </p>
-        </article>
-
-        <article class="panel">
-          <div class="panel-heading">
-            <span class="step">02</span>
-            <div>
-              <h2>Ingest PRCC</h2>
-              <p>Upload a CSV, JSON, or labeled text export.</p>
-            </div>
+        <section class="results search-results-card" aria-labelledby="search-results-title">
+          <div class="pool-heading search-results-heading">
+            <div><p class="eyebrow">REPORTER POOL</p><h2 id="pool-count" class="pool-count">Loading reporter directory…</h2></div>
+            <div class="pool-actions"><button type="button" id="select-all-pool">Select All</button><button type="button" id="deselect-all-pool">Deselect All</button><button type="button" id="add-selected-pool" class="dark-button">Add Selected to Media List</button></div>
           </div>
+          <div id="reporter-pool" class="table-wrap reporter-pool"></div>
+        </section>
 
-          <!--
-            IMPORTANT:
-            The file input is NOT required.
-            JavaScript validates it instead.
-            This prevents the browser's
-            "invalid form control is not focusable" error.
-          -->
+        <section class="results current-media-card" aria-labelledby="current-media-heading">
+          <div class="pool-heading">
+            <div><p class="eyebrow">SELECTED REPORTERS</p><h2 id="current-media-heading">CURRENT MEDIA LIST <span id="media-list-count">0 reporters</span></h2></div>
+            <div class="pool-actions"><button type="button" id="remove-selected-media">Remove Selected</button><button type="button" id="clear-media-list" class="danger-action">Clear List</button></div>
+          </div>
+          <div id="media-list" class="table-wrap media-list-table"></div>
+          <div class="sheet-action"><button type="button" id="create-media-sheet" class="primary-action btn">Create Google Sheet <span>→</span></button><span class="badge">Creates a new sheet from the current list.</span></div>
+          <div id="media-sheet-status" class="badge" aria-live="polite"></div>
+        </section>
+      </section>
 
-          <form id="ingest-form" novalidate>
+      <section id="view-coverage" class="app-view" data-view-panel="coverage" role="tabpanel" hidden>
+        <section class="results report-panel">
+          <div class="results-header"><div><p class="eyebrow">CLIENT INTELLIGENCE</p><h2>Coverage Report</h2></div><button id="refresh-report-button" class="btn" type="button">Refresh report <span>↻</span></button></div>
+          <nav id="report-tabs" class="report-tabs" aria-label="Coverage report tabs">
+            <button type="button" data-report-tab="Coverage">Coverage</button><button type="button" data-report-tab="Reporters">Reporters</button><button type="button" data-report-tab="Outlets">Outlets</button><button type="button" data-report-tab="Client Contact">Client Contact</button><button type="button" data-report-tab="Team Contact">Team Contact</button>
+          </nav>
+          <div id="report-status" class="badge">Loading report...</div>
+          <div id="report-content" class="table-wrap"></div>
+        </section>
+      </section>
 
-            <label class="dropzone" for="file">
-              <strong id="file-label">Choose a PRCC file</strong>
-              <span>CSV, JSON, or plain text up to 10 MB</span>
-
-              <input
-                id="file"
-                name="file"
-                type="file"
-                accept=".csv,.json,.txt,text/csv,application/json,text/plain"
-              />
-            </label>
-
-            <button
-              type="submit"
-              class="dark-button"
-              id="ingest-button"
-            >
-              Process coverage <span>→</span>
-            </button>
-
-            <div
-              id="ingest-status"
-              class="badge"
-              style="margin-top: 12px;"
-            >
-              Choose a file to begin
-            </div>
-
+      <section id="view-admin" class="app-view admin-view" data-view-panel="admin" role="tabpanel" hidden>
+        <section class="workspace-grid">
+          <article class="panel">
+            <div class="panel-heading"><span class="step">01</span><div><h2>Connect workspace</h2><p>Configure the Google Drive workspace.</p></div></div>
+            <form id="config-form"><label for="root-folder">Google Drive folder ID or URL</label><input id="root-folder" name="rootFolderId" placeholder="Paste the folder ID or full Drive URL" required /><button type="submit">Save folder and authorize <span>↗</span></button></form>
+            <p class="fine-print">Google authorization is used for Drive file creation and spreadsheets.</p>
+          </article>
+          <article class="panel">
+            <div class="panel-heading"><span class="step">02</span><div><h2>Import PRCC</h2><p>Upload a CSV, JSON, or labeled text export.</p></div></div>
+            <form id="ingest-form" novalidate>
+              <label class="dropzone" for="file"><strong id="file-label">Choose a PRCC file</strong><span>CSV, JSON, or plain text up to 10 MB</span><input id="file" name="file" type="file" accept=".csv,.json,.txt,text/csv,application/json,text/plain" /></label>
+              <button type="submit" class="dark-button" id="ingest-button">Process coverage <span>→</span></button>
+              <div id="ingest-status" class="badge" aria-live="polite">Choose a file to begin</div>
+            </form>
             <div class="manual-entry">
               <p class="kicker">MANUAL PRCC ENTRY</p>
-              <div class="form-grid">
-                <input name="date" placeholder="Date" form="manual-coverage-form" />
-                <input name="client" placeholder="Client" form="manual-coverage-form" required />
-                <input name="title" placeholder="Title" form="manual-coverage-form" required />
-                <select name="outlet" form="manual-coverage-form" required><option value="">Select outlet</option></select>
-                <select name="reporterId" form="manual-coverage-form"><option value="">Select reporter</option></select>
-                <input name="spokesperson" placeholder="Spokesperson" form="manual-coverage-form" />
-                <input name="coverageType" placeholder="Coverage Type" form="manual-coverage-form" />
-                <input name="sentiment" placeholder="Sentiment" form="manual-coverage-form" />
-                <input name="status" placeholder="Status" form="manual-coverage-form" />
-                <input name="url" placeholder="Coverage URL" type="url" form="manual-coverage-form" />
-              </div>
+              <form id="manual-coverage-form" class="form-grid">
+                <input name="date" placeholder="Date" aria-label="Date" />
+                <input name="client" placeholder="Client" aria-label="Client" required />
+                <input name="title" placeholder="Title" aria-label="Title" required />
+                <select name="outlet" aria-label="Outlet" required><option value="">Select outlet</option></select>
+                <div class="searchable-reporter"><input id="manual-reporter-search" list="manual-reporter-options" placeholder="Search Master Directory reporters" aria-label="Search Master Directory reporters" autocomplete="off" /><datalist id="manual-reporter-options"></datalist><input type="hidden" name="reporterId" /></div>
+                <input name="spokesperson" placeholder="Spokesperson" aria-label="Spokesperson" />
+                <input name="coverageType" placeholder="Coverage Type" aria-label="Coverage Type" />
+                <input name="sentiment" placeholder="Sentiment" aria-label="Sentiment" />
+                <input name="status" placeholder="Status" aria-label="Status" />
+                <input name="url" placeholder="Coverage URL" type="url" aria-label="Coverage URL" />
+              </form>
               <button id="manual-coverage-button" type="button">Add PRCC coverage <span>→</span></button>
-              <div id="manual-coverage-status" class="badge">Uses current master references</div>
+              <div id="manual-coverage-status" class="badge">Uses current Master Directory and outlet references</div>
             </div>
+          </article>
+        </section>
 
-          </form>
-        </article>
+        <section class="results diagnostics-panel"><div class="results-header"><div><p class="kicker">OPERATIONS</p><h2>Workspace diagnostics</h2></div><button id="diagnostics-button" class="dark-button" type="button">Run diagnostics <span>→</span></button></div><pre id="diagnostics-output" class="diagnostics-output">No diagnostics run yet.</pre><div class="sync-action"><button id="populate-reporters-button" type="button">Stage Reporters in Sheet1 <span>→</span></button><span id="populate-reporters-status" class="badge">Manual write operation</span></div><div class="sync-action"><button id="sync-local-button" type="button">Sync Local Records to Google <span>→</span></button><span id="sync-local-status" class="badge">Manual write operation</span></div></section>
 
+        <section class="results enrichment-panel"><div class="results-header"><div><p class="kicker">SEPARATE DRY RUN</p><h2>AI Reporter Enrichment</h2><p class="panel-subtitle">Review proposed changes before any directory write.</p></div><button id="enrich-button" class="dark-button" type="button">Run Reporter Enrichment <span>→</span></button></div><div id="enrichment-summary" class="metrics enrichment-metrics"></div><div class="enrichment-actions"><button id="approve-high-button" type="button">Approve All High Confidence</button><button id="apply-enrichment-button" class="dark-button" type="button">Apply Approved Changes</button><span id="enrichment-status" class="badge">Dry-run only until approval</span></div><div class="table-wrap"><table><thead><tr><th>Reporter</th><th>Outlet</th><th>Current Type</th><th>Proposed Type</th><th>Current Beats</th><th>Proposed Beats</th><th>Confidence</th><th>Sources</th><th>Action</th></tr></thead><tbody id="enrichment-rows"></tbody></table></div></section>
+
+        <section class="results" id="results" hidden><div class="results-header"><div><p class="kicker">PROCESSING REPORT</p><h2>Latest ingestion</h2></div><span id="sync-badge" class="badge"></span></div><div class="metrics"><div><strong id="added">0</strong><span>Added</span></div><div><strong id="duplicates">0</strong><span>Duplicates skipped</span></div><div><strong id="review">0</strong><span>Needs review</span></div></div><ul id="review-list" class="review-list"></ul></section>
       </section>
-
-      <section class="results report-panel">
-        <div class="results-header">
-          <div><p class="kicker">CLIENT COVERAGE REPORT</p><h2>Coverage reporting</h2></div>
-          <button id="refresh-report-button" class="dark-button" type="button">Refresh report <span>↻</span></button>
-        </div>
-        <nav id="report-tabs" class="report-tabs" aria-label="Coverage report tabs">
-          <button type="button" data-report-tab="Coverage">Coverage</button>
-          <button type="button" data-report-tab="Reporters">Reporters</button>
-          <button type="button" data-report-tab="Outlets">Outlets</button>
-          <button type="button" data-report-tab="Client Contact">Client Contact</button>
-          <button type="button" data-report-tab="Team Contact">Team Contact</button>
-        </nav>
-        <div id="report-status" class="badge">Loading report...</div>
-        <div id="report-content" class="table-wrap"></div>
-      </section>
-
-      <section class="results diagnostics-panel">
-
-        <div class="results-header">
-          <div>
-            <p class="kicker">READ-ONLY CHECK</p>
-            <h2>Google workspace diagnostics</h2>
-          </div>
-
-          <button
-            id="diagnostics-button"
-            class="dark-button"
-            type="button"
-          >
-            Run Google Diagnostics <span>→</span>
-          </button>
-        </div>
-
-        <pre
-          id="diagnostics-output"
-          class="diagnostics-output"
-        >No diagnostics run yet.</pre>
-
-        <div class="sync-action">
-          <button
-            id="populate-reporters-button"
-            type="button"
-          >
-            Populate Master Reporters <span>→</span>
-          </button>
-
-          <span
-            id="populate-reporters-status"
-            class="badge"
-          >
-            Manual write operation
-          </span>
-        </div>
-
-        <div class="sync-action">
-          <button
-            id="sync-local-button"
-            type="button"
-          >
-            Sync Local Records to Google <span>→</span>
-          </button>
-
-          <span
-            id="sync-local-status"
-            class="badge"
-          >
-            Manual write operation
-          </span>
-        </div>
-
-      </section>
-
-      <section class="results enrichment-panel">
-
-        <div class="results-header">
-          <div>
-            <p class="kicker">SEPARATE DRY RUN</p>
-            <h2>AI Reporter Enrichment</h2>
-
-            <p class="panel-subtitle">
-              Research unique reporter/outlet pairs and review proposed
-              changes before any Master Reporter List write.
-            </p>
-          </div>
-
-          <button
-            id="enrich-button"
-            class="dark-button"
-            type="button"
-          >
-            Run Reporter Enrichment <span>→</span>
-          </button>
-        </div>
-
-        <div
-          id="enrichment-summary"
-          class="metrics enrichment-metrics"
-        ></div>
-
-        <div class="enrichment-actions">
-
-          <button
-            id="approve-high-button"
-            type="button"
-          >
-            Approve All High Confidence
-          </button>
-
-          <button
-            id="apply-enrichment-button"
-            class="dark-button"
-            type="button"
-          >
-            Apply Approved Changes
-          </button>
-
-          <span
-            id="enrichment-status"
-            class="badge"
-          >
-            Dry-run only until approval
-          </span>
-
-        </div>
-
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Reporter</th>
-                <th>Outlet</th>
-                <th>Current Type</th>
-                <th>Proposed Type</th>
-                <th>Current Beats</th>
-                <th>Proposed Beats</th>
-                <th>Confidence</th>
-                <th>Sources</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-
-            <tbody id="enrichment-rows"></tbody>
-          </table>
-        </div>
-
-      </section>
-
-      <section
-        class="results"
-        id="results"
-        hidden
-      >
-
-        <div class="results-header">
-
-          <div>
-            <p class="kicker">PROCESSING REPORT</p>
-            <h2>Latest ingestion</h2>
-          </div>
-
-          <span
-            id="sync-badge"
-            class="badge"
-          ></span>
-
-        </div>
-
-        <div class="metrics">
-
-          <div>
-            <strong id="added">0</strong>
-            <span>Added</span>
-          </div>
-
-          <div>
-            <strong id="duplicates">0</strong>
-            <span>Duplicates skipped</span>
-          </div>
-
-          <div>
-            <strong id="review">0</strong>
-            <span>Needs review</span>
-          </div>
-
-        </div>
-
-        <ul
-          id="review-list"
-          class="review-list"
-        ></ul>
-
-      </section>
-
     </main>
-
     <script type="module" src="/app.js"></script>
   </body>
 </html>

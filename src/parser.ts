@@ -217,7 +217,7 @@ function clientFromFilename(filename: string): string {
   );
 
   if (prCampaignMatch?.[1]) {
-    return clean(prCampaignMatch[1]);
+    return canonicalizeFilenameClient(prCampaignMatch[1]);
   }
 
   /*
@@ -230,7 +230,7 @@ function clientFromFilename(filename: string): string {
   );
 
   if (dashMatch?.[1]) {
-    return clean(dashMatch[1]);
+    return canonicalizeFilenameClient(dashMatch[1]);
   }
 
   return "";
@@ -394,6 +394,12 @@ export function parseInput(
     source: "Text",
     items
   };
+}
+
+/** Canonical client labels used by PRCC export filenames. */
+function canonicalizeFilenameClient(value: string): string {
+  const cleaned = clean(value);
+  return normalizeHeader(cleaned) === "wealth" ? "Wealth.com" : cleaned;
 }
 
 /** Extracts title + target when a source format preserves hyperlink metadata. */

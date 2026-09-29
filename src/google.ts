@@ -1,13 +1,18 @@
 import { google, drive_v3, sheets_v4 } from "googleapis";
+import type { Credentials } from "google-auth-library";
 import type {
   CoverageRecord,
   EnrichmentProposal,
   OutletRecord,
   ReporterRecord
 } from "./domain.js";
+import { createHash } from "node:crypto";
 import type { ContactRecord } from "./domain.js";
 import { normalizeBeats, normalizeReporterType } from "./domain.js";
 import { normalizeName } from "./normalize.js";
+import { hasReporterId, mergeSheetOwnedReporter, reporterIdentityKey } from "./reporter-fields.js";
+import { buildReporterPreflight, type ReporterPreflightSnapshot } from "./reporter-preflight.js";
+import { planCanonicalBeatMigration } from "../public/canonical-beats.js";
 import {
   CONTACT_REPORT_HEADERS,
   COVERAGE_REPORT_HEADERS,
@@ -21,7 +26,7 @@ import {
   uniqueContactReportRows
 } from "./report-projections.js";
 
-const REPORTER_HEADERS = [
+export const REPORTER_HEADERS = [
   "ID",
   "Outlet",
   "Reporter First Name",
@@ -31,8 +36,38 @@ const REPORTER_HEADERS = [
   "Clients Covered",
   "Beats",
   "Notes",
+  "Most Recent Article",
   "Status"
 ];
+
+export const RAW_REPORTER_TAB = "Sheet1";
+export const CLEANED_REPORTER_TAB = "Master Directory (Cleaned)";
+
+export function configuredGoogleRedirectUri(): string {
+  const configured = process.env.GOOGLE_REDIRECT_URI?.trim();
+  if (configured) return configured;
+  if (process.env.VERCEL === "1") {
+    const deployment = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL;
+    if (deployment) return `https://${deployment}/oauth2callback`;
+    throw new Error("GOOGLE_REDIRECT_URI is required for Vercel deployments");
+  }
+  return "http://localhost:3001/oauth2callback";
+}
+
+function quotedTabRange(title: string, range: string): string {
+  return `'${title.replace(/'/g, "''")}'!${range}`;
+}
+
+function columnName(index: number): string {
+  let value = index + 1;
+  let result = "";
+  while (value > 0) {
+    const remainder = (value - 1) % 26;
+    result = String.fromCharCode(65 + remainder) + result;
+    value = Math.floor((value - 1) / 26);
+  }
+  return result;
+}
 
 const COVERAGE_HEADERS = COVERAGE_REPORT_HEADERS;
 
@@ -126,6 +161,17 @@ export interface ReporterSyncSummary {
   updatedReporterRows: number;
   skippedReporterRows: number;
   consideredReporters: number;
+  deletedReporterRows: number;
+}
+
+export interface ReporterSyncResult extends ReporterSyncSummary {
+  mergedReporters: ReporterRecord[];
+  mergedArchivedReporters: ReporterRecord[];
+}
+
+interface ReporterOutletSnapshot {
+  outletMap: Map<string, OutletRecord>;
+  reporterMap: Map<string, ReporterRecord>;
 }
 
 export class GoogleWorkspace {
@@ -135,13 +181,11 @@ export class GoogleWorkspace {
   private drive!: drive_v3.Drive;
   private sheets!: sheets_v4.Sheets;
 
-  constructor(private readonly rootFolderId: string) {
+  constructor(readonly rootFolderId: string, credentials?: Credentials) {
     const clientId = process.env.GOOGLE_CLIENT_ID?.trim();
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim();
 
-    this.redirectUri =
-      process.env.GOOGLE_REDIRECT_URI?.trim() ||
-      "http://localhost:3000/oauth2callback";
+    this.redirectUri = configuredGoogleRedirectUri();
 
     if (!clientId || !clientSecret) {
       throw new Error(
@@ -162,6 +206,17 @@ export class GoogleWorkspace {
       clientSecret,
       this.redirectUri
     );
+    if (credentials) this.setCredentials(credentials);
+  }
+
+  get credentials(): Credentials {
+    return { ...this.oauth.credentials };
+  }
+
+  setCredentials(credentials: Credentials): void {
+    this.oauth.setCredentials(credentials);
+    this.drive = google.drive({ version: "v3", auth: this.oauth });
+    this.sheets = google.sheets({ version: "v4", auth: this.oauth });
   }
 
   get authorizationUrl(): string {
@@ -183,22 +238,44 @@ export class GoogleWorkspace {
 
   async authorize(code: string): Promise<void> {
     const { tokens } = await this.oauth.getToken(code);
-
-    this.oauth.setCredentials(tokens);
-
-    this.drive = google.drive({
-      version: "v3",
-      auth: this.oauth
-    });
-
-    this.sheets = google.sheets({
-      version: "v4",
-      auth: this.oauth
-    });
+    this.setCredentials(tokens);
   }
 
   get connected(): boolean {
     return Boolean(this.drive && this.sheets);
+  }
+
+  /** Creates a new spreadsheet for a user's current draft without touching master tabs. */
+  async createMediaListSpreadsheet(title: string, headers: string[], rows: string[][]): Promise<{ spreadsheetId: string; spreadsheetUrl: string }> {
+    this.ensureConnected();
+    const created = await this.sheets.spreadsheets.create({
+      requestBody: {
+        properties: { title },
+        sheets: [{ properties: { sheetId: 0, title: "Media List", gridProperties: { frozenRowCount: 1 } } }]
+      },
+      fields: "spreadsheetId,spreadsheetUrl"
+    });
+    const spreadsheetId = created.data.spreadsheetId;
+    if (!spreadsheetId) throw new Error("Google did not return a spreadsheet ID");
+    const spreadsheetUrl = created.data.spreadsheetUrl ?? `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit`;
+    await this.sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: "'Media List'!A1",
+      valueInputOption: "RAW",
+      requestBody: { majorDimension: "ROWS", values: [headers, ...rows] }
+    });
+    const widths = [145, 200, 155, 155, 230, 140, 300, 360, 360];
+    await this.sheets.spreadsheets.batchUpdate({
+      spreadsheetId,
+      requestBody: {
+        requests: [
+          { repeatCell: { range: { sheetId: 0, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: headers.length }, cell: { userEnteredFormat: { backgroundColor: { red: 0.89, green: 0.93, blue: 0.98 }, textFormat: { bold: true }, verticalAlignment: "MIDDLE", wrapStrategy: "WRAP" } }, fields: "userEnteredFormat(backgroundColor,textFormat,verticalAlignment,wrapStrategy)" } },
+          { repeatCell: { range: { sheetId: 0, startRowIndex: 1, endRowIndex: Math.max(rows.length + 1, 2), startColumnIndex: 0, endColumnIndex: headers.length }, cell: { userEnteredFormat: { verticalAlignment: "TOP", wrapStrategy: "WRAP" } }, fields: "userEnteredFormat(verticalAlignment,wrapStrategy)" } },
+          ...widths.slice(0, headers.length).map((pixelSize, index) => ({ updateDimensionProperties: { range: { sheetId: 0, dimension: "COLUMNS", startIndex: index, endIndex: index + 1 }, properties: { pixelSize }, fields: "pixelSize" } }))
+        ]
+      }
+    });
+    return { spreadsheetId, spreadsheetUrl };
   }
 
   private ensureConnected(): void {
@@ -436,7 +513,7 @@ export class GoogleWorkspace {
     const response =
       await this.sheets.spreadsheets.values.get({
         spreadsheetId,
-        range: "A:Z"
+        range: quotedTabRange(CLEANED_REPORTER_TAB, "A:Z")
       });
 
     const rows = response.data.values ?? [];
@@ -455,6 +532,7 @@ export class GoogleWorkspace {
         const clientsIndex = this.reporterFieldIndex(header, "Clients Covered");
         const beatsIndex = this.reporterFieldIndex(header, "Beats");
         const notesIndex = this.reporterFieldIndex(header, "Notes");
+        const recentIndex = this.reporterFieldIndex(header, "Most Recent Article");
         const statusIndex = this.reporterFieldIndex(header, "Status");
 
         return {
@@ -463,18 +541,186 @@ export class GoogleWorkspace {
           firstName: String(row[firstNameIndex >= 0 ? firstNameIndex : 2] ?? ""),
           lastName: String(row[lastNameIndex >= 0 ? lastNameIndex : 3] ?? ""),
           email: String(row[emailIndex >= 0 ? emailIndex : 4] ?? ""),
-          clientsCovered: String(row[clientsIndex >= 0 ? clientsIndex : 5] ?? ""),
-          beats: String(row[beatsIndex >= 0 ? beatsIndex : 6] ?? ""),
+          clientsCovered: String(row[clientsIndex >= 0 ? clientsIndex : 6] ?? ""),
+          beats: String(row[beatsIndex >= 0 ? beatsIndex : 7] ?? ""),
           notes: String(row[notesIndex >= 0 ? notesIndex : 8] ?? ""),
+          mostRecentArticle: String(row[recentIndex >= 0 ? recentIndex : 9] ?? ""),
           status:
-            String(row[statusIndex >= 0 ? statusIndex : 9] ?? "") === "Inactive"
-              ? "Inactive"
-              : String(row[statusIndex >= 0 ? statusIndex : 9] ?? "") === "Needs Review"
+            String(row[statusIndex >= 0 ? statusIndex : 10] ?? "") === "Inactive"
+            ? "Inactive"
+              : String(row[statusIndex >= 0 ? statusIndex : 10] ?? "") === "Needs Review"
                 ? "Needs Review"
                 : "Active",
-          reporterType: this.normalizeReporterType(String(typeIndex >= 0 ? row[typeIndex] ?? "" : "reporter"))
+          reporterType: String(typeIndex >= 0 ? row[typeIndex] ?? "reporter" : "reporter").trim() === ""
+            ? ""
+            : String(typeIndex >= 0 ? row[typeIndex] ?? "reporter" : "reporter").trim()
         };
       });
+  }
+
+  /** Explicit, bounded migration: writes only the Beats and Original Beats columns. */
+  async migrateCanonicalBeats(options: { dryRun: boolean; expectedSnapshotFingerprint?: string }) {
+    this.ensureConnected();
+    const root = await this.inspectRoot();
+    if (!root.reporterSheet) throw new Error("The reporter spreadsheet was not found under the configured root");
+
+    const [valuesResponse, spreadsheetResponse] = await Promise.all([
+      this.sheets.spreadsheets.values.get({
+        spreadsheetId: root.reporterSheet,
+        range: quotedTabRange(CLEANED_REPORTER_TAB, "A:AZ")
+      }),
+      this.sheets.spreadsheets.get({
+        spreadsheetId: root.reporterSheet,
+        fields: "properties(title),sheets(properties(title,sheetId))"
+      })
+    ]);
+    const rows = (valuesResponse.data.values ?? []).map((row) => row.map((value) => String(value ?? "")));
+    const header = rows[0] ?? [];
+    const hasExpectedSchema = REPORTER_HEADERS.every((name, index) => String(header[index] ?? "").trim().toLowerCase() === name.toLowerCase());
+    if (!hasExpectedSchema) {
+      throw new Error(`Cannot migrate safely: '${CLEANED_REPORTER_TAB}' must begin with the existing ${REPORTER_HEADERS.length}-column Master Directory header schema`);
+    }
+    const beatsIndex = header.findIndex((name) => String(name ?? "").trim().toLowerCase() === "beats");
+    const existingOriginalIndex = header.findIndex((name) => String(name ?? "").trim().toLowerCase() === "original beats");
+    const originalIndex = existingOriginalIndex >= 0 ? existingOriginalIndex : header.length;
+    if (existingOriginalIndex < 0 && rows.slice(1).some((row) => String(row[originalIndex] ?? "").trim())) {
+      throw new Error(`Cannot add 'Original Beats' safely: column ${columnName(originalIndex)} already contains data`);
+    }
+
+    const plan = planCanonicalBeatMigration(rows, header);
+    const preserveOriginalRows = plan.plannedRows.filter((row) => row.preserveOriginal);
+    const plannedWrites = plan.plannedRows.filter((row) => row.changeBeats || row.preserveOriginal);
+    const sourceSnapshot = JSON.stringify({
+      header,
+      rows: rows.slice(1).map((row) => [row[0] ?? "", row[beatsIndex] ?? "", existingOriginalIndex >= 0 ? row[existingOriginalIndex] ?? "" : ""])
+    });
+    const snapshotFingerprint = createHash("sha256").update(sourceSnapshot).digest("hex");
+    if (options.expectedSnapshotFingerprint && options.expectedSnapshotFingerprint !== snapshotFingerprint) {
+      throw new Error("Master Directory Beats changed after the dry run; run the migration command again to review a fresh summary");
+    }
+
+    const dataRows = rows.slice(1).filter((row) => row.some((cell) => String(cell ?? "").trim()));
+    const tab = (spreadsheetResponse.data.sheets ?? []).find((sheet) => sheet.properties?.title === CLEANED_REPORTER_TAB);
+    if (!tab) throw new Error(`Reporter tab '${CLEANED_REPORTER_TAB}' was not found in the reporter spreadsheet`);
+    const summary = {
+      dryRun: options.dryRun,
+      spreadsheetId: root.reporterSheet,
+      spreadsheetTitle: spreadsheetResponse.data.properties?.title ?? "",
+      tabTitle: CLEANED_REPORTER_TAB,
+      tabSheetId: tab.properties?.sheetId ?? null,
+      headerRow: 1,
+      beatsColumn: columnName(beatsIndex),
+      originalBeatsColumn: columnName(originalIndex),
+      originalBeatsHeaderAdded: existingOriginalIndex < 0 && preserveOriginalRows.length > 0,
+      totalMasterDirectoryRowsInspected: dataRows.length,
+      rowsWithBeats: plan.rowsWithBeats,
+      rowsWhoseCanonicalBeatsWouldChange: plan.rowsWouldChange,
+      rowsWithMultipleCanonicalCategories: plan.rowsWithMultipleCanonicalCategories,
+      rowsWithNoCanonicalMapping: plan.rowsWithoutCanonicalMapping,
+      unmappedRawBeats: plan.unmappedRawBeats,
+      googleRowsThatWouldBeWritten: plannedWrites.length,
+      snapshotFingerprint
+    };
+    if (options.dryRun || !plannedWrites.length) return summary;
+
+    // Preserve original raw values first. If this phase fails, the Beats cells remain untouched.
+    const backupUpdates: Array<{ range: string; values: string[][] }> = [];
+    if (summary.originalBeatsHeaderAdded) {
+      backupUpdates.push({
+        range: quotedTabRange(CLEANED_REPORTER_TAB, `${columnName(originalIndex)}1`),
+        values: [["Original Beats"]]
+      });
+    }
+    for (const row of preserveOriginalRows) {
+      backupUpdates.push({
+        range: quotedTabRange(CLEANED_REPORTER_TAB, `${columnName(originalIndex)}${row.rowNumber}`),
+        values: [[row.raw]]
+      });
+    }
+    if (backupUpdates.length) {
+      await this.sheets.spreadsheets.values.batchUpdate({
+        spreadsheetId: root.reporterSheet,
+        requestBody: { valueInputOption: "RAW", data: backupUpdates }
+      });
+    }
+
+    const beatUpdates = plan.plannedRows.filter((row) => row.changeBeats).map((row) => ({
+      range: quotedTabRange(CLEANED_REPORTER_TAB, `${columnName(beatsIndex)}${row.rowNumber}`),
+      values: [[row.canonical]]
+    }));
+    if (beatUpdates.length) {
+      await this.sheets.spreadsheets.values.batchUpdate({
+        spreadsheetId: root.reporterSheet,
+        requestBody: { valueInputOption: "RAW", data: beatUpdates }
+      });
+    }
+    return { ...summary, dryRun: false, googleRowsWritten: plannedWrites.length, canonicalBeatCellsWritten: beatUpdates.length, originalValuesPreserved: preserveOriginalRows.length };
+  }
+
+  /** READ ONLY: compare local reporter state with both explicitly named reporter tabs. */
+  async reporterPreflight(local: ReporterPreflightSnapshot) {
+    this.ensureConnected();
+    const root = await this.inspectRoot();
+    if (!root.reporterSheet) throw new Error("The reporter spreadsheet was not found under the configured root");
+
+    const metadata = await this.sheets.spreadsheets.get({
+      spreadsheetId: root.reporterSheet,
+      fields: "sheets(properties(sheetId,title))"
+    });
+    const sheetByTitle = new Map((metadata.data.sheets ?? []).map((sheet) => [
+      sheet.properties?.title ?? "",
+      sheet.properties?.sheetId
+    ]));
+    const rawSheetId = sheetByTitle.get(RAW_REPORTER_TAB);
+    const cleanedSheetId = sheetByTitle.get(CLEANED_REPORTER_TAB);
+    if (rawSheetId == null) throw new Error(`Reporter tab '${RAW_REPORTER_TAB}' was not found`);
+    if (cleanedSheetId == null) throw new Error(`Reporter tab '${CLEANED_REPORTER_TAB}' was not found`);
+
+    const values = await this.sheets.spreadsheets.values.batchGet({
+      spreadsheetId: root.reporterSheet,
+      ranges: [quotedTabRange(RAW_REPORTER_TAB, "A:Z"), quotedTabRange(CLEANED_REPORTER_TAB, "A:Z")],
+      majorDimension: "ROWS"
+    });
+    const [rawValues, cleanedValues] = values.data.valueRanges ?? [];
+    const asStrings = (rows: string[][] | undefined) => (rows ?? []).map((row) => row.map((value) => String(value ?? "")));
+    const summary = buildReporterPreflight(
+      local,
+      { title: RAW_REPORTER_TAB, sheetId: rawSheetId, values: asStrings(rawValues?.values as string[][] | undefined) },
+      { title: CLEANED_REPORTER_TAB, sheetId: cleanedSheetId, values: asStrings(cleanedValues?.values as string[][] | undefined) }
+    );
+    return { masterReporterSpreadsheetId: root.reporterSheet, ...summary };
+  }
+
+  private async reporterTabSheetId(spreadsheetId: string, title: string): Promise<number> {
+    const metadata = await this.sheets.spreadsheets.get({
+      spreadsheetId,
+      fields: "sheets(properties(sheetId,title))"
+    });
+    const tab = (metadata.data.sheets ?? []).find((sheet) => sheet.properties?.title === title);
+    const sheetId = tab?.properties?.sheetId;
+    if (sheetId == null) throw new Error(`Reporter tab '${title}' was not found`);
+    return sheetId;
+  }
+
+  private async loadReporterOutletSnapshot(root: {
+    reporterSheet: string | undefined;
+    outletSheet: string | undefined;
+  }): Promise<ReporterOutletSnapshot> {
+    const reporterMap = new Map<string, ReporterRecord>();
+    if (root.reporterSheet) {
+      for (const reporter of await this.loadReporters(root.reporterSheet)) {
+        reporterMap.set(reporter.id, reporter);
+      }
+    }
+
+    const outletMap = new Map<string, OutletRecord>();
+    if (root.outletSheet) {
+      for (const outlet of await this.loadOutlets(root.outletSheet)) {
+        outletMap.set(normalizeName(outlet.name), outlet);
+      }
+    }
+
+    return { reporterMap, outletMap };
   }
 
   async syncLocalRecords(
@@ -508,6 +754,10 @@ export class GoogleWorkspace {
       recordsByClient.set(key, bucket);
     }
 
+    const masterData = recordsByClient.size > 0
+      ? await this.loadReporterOutletSnapshot(root)
+      : undefined;
+
     const clients: ClientCoverageSyncResult[] = [];
 
     for (const clientRecords of recordsByClient.values()) {
@@ -516,7 +766,8 @@ export class GoogleWorkspace {
         clientName,
         clientRecords,
         root.clientsFolder,
-        contacts
+        contacts,
+        masterData
       );
       clients.push(syncResult);
     }
@@ -546,7 +797,8 @@ export class GoogleWorkspace {
     contacts: { clientContacts: ContactRecord[]; teamContacts: ContactRecord[] } = {
       clientContacts: [],
       teamContacts: []
-    }
+    },
+    masterData?: ReporterOutletSnapshot
   ): Promise<ClientCoverageSyncResult> {
     this.ensureConnected();
 
@@ -598,20 +850,8 @@ export class GoogleWorkspace {
       existingRows = [COVERAGE_HEADERS, ...migratedRows];
     }
 
-    const outletMap = new Map<string, OutletRecord>();
-    const rootForOutlets = await this.inspectRoot();
-    if (rootForOutlets.outletSheet) {
-      for (const outlet of await this.loadOutlets(rootForOutlets.outletSheet)) {
-        outletMap.set(normalizeName(outlet.name), outlet);
-      }
-    }
-
-    const reporterMap = new Map<string, ReporterRecord>();
-    if (rootForOutlets.reporterSheet) {
-      for (const reporter of await this.loadReporters(rootForOutlets.reporterSheet)) {
-        reporterMap.set(reporter.id, reporter);
-      }
-    }
+    const { outletMap, reporterMap } = masterData ??
+      await this.loadReporterOutletSnapshot(await this.inspectRoot());
 
     const existingKeys = new Set(
       existingRows.slice(1).map((row) =>
@@ -946,6 +1186,7 @@ export class GoogleWorkspace {
           beats: "",
           reporterType: "reporter",
           notes: "Unmatched in Master Reporter List",
+          mostRecentArticle: "",
           status: "Needs Review"
         });
       }
@@ -1132,9 +1373,106 @@ export class GoogleWorkspace {
     if (requests.length) await this.sheets.spreadsheets.batchUpdate({ spreadsheetId, requestBody: { requests } });
   }
 
+  /** Upsert app-generated reporter data into Sheet1 without reading it as canonical. */
+  async syncRawReporterStaging(reporters: ReporterRecord[]): Promise<ReporterSyncSummary> {
+    this.ensureConnected();
+    const root = await this.inspectRoot();
+    if (!root.reporterSheet) throw new Error("The reporter spreadsheet was not found under the configured root");
+    await this.reporterTabSheetId(root.reporterSheet, RAW_REPORTER_TAB);
+
+    const range = quotedTabRange(RAW_REPORTER_TAB, "A:Z");
+    const response = await this.sheets.spreadsheets.values.get({ spreadsheetId: root.reporterSheet, range });
+    const rows = (response.data.values ?? []).map((row) => row.map((value) => String(value ?? "")));
+    const headers = rows[0] ?? [];
+    const valuesByHeader = (reporter: ReporterRecord): Record<string, string> => ({
+      "ID": reporter.id,
+      "Outlet": reporter.outlet,
+      "Reporter First Name": reporter.firstName,
+      "Reporter Last Name": reporter.lastName,
+      "Email": reporter.email,
+      "Reporter Type": reporter.reporterType,
+      "Clients Covered": reporter.clientsCovered,
+      "Beats": reporter.beats,
+      "Notes": reporter.notes,
+      "Most Recent Article": reporter.mostRecentArticle ?? "",
+      "Status": reporter.status
+    });
+
+    if (!rows.length) {
+      if (!reporters.length) return { addedReporterRows: 0, updatedReporterRows: 0, skippedReporterRows: 0, consideredReporters: 0, deletedReporterRows: 0 };
+      const values = reporters.map((reporter) => this.reporterRow(reporter));
+      await this.sheets.spreadsheets.values.update({
+        spreadsheetId: root.reporterSheet,
+        range: quotedTabRange(RAW_REPORTER_TAB, `A1:K${values.length + 1}`),
+        valueInputOption: "USER_ENTERED",
+        requestBody: { values: [REPORTER_HEADERS, ...values] }
+      });
+      return { addedReporterRows: values.length, updatedReporterRows: 0, skippedReporterRows: 0, consideredReporters: reporters.length, deletedReporterRows: 0 };
+    }
+
+    const idIndex = this.reporterFieldIndex(headers, "ID");
+    const outletIndex = this.reporterFieldIndex(headers, "Outlet");
+    const firstIndex = this.reporterFieldIndex(headers, "Reporter First Name");
+    const lastIndex = this.reporterFieldIndex(headers, "Reporter Last Name");
+    if (idIndex < 0 && (outletIndex < 0 || firstIndex < 0 || lastIndex < 0)) {
+      throw new Error(`The ${RAW_REPORTER_TAB} staging tab has no recognizable reporter columns; it was left unchanged`);
+    }
+
+    const rowsById = new Map<string, number>();
+    const rowsByIdentity = new Map<string, number>();
+    rows.slice(1).forEach((row, index) => {
+      const rowNumber = index + 2;
+      const id = idIndex >= 0 ? String(row[idIndex] ?? "").trim() : "";
+      if (id) rowsById.set(id, rowNumber);
+      else if (outletIndex >= 0 && firstIndex >= 0 && lastIndex >= 0) {
+        rowsByIdentity.set(this.reporterKey(String(row[outletIndex] ?? ""), String(row[firstIndex] ?? ""), String(row[lastIndex] ?? "")), rowNumber);
+      }
+    });
+
+    const updates: sheets_v4.Schema$ValueRange[] = [];
+    const appends: string[][] = [];
+    const endColumn = columnName(Math.max(headers.length, 1) - 1);
+    const headerNames = headers.map((header) => String(header ?? "").trim().toLowerCase());
+    for (const reporter of reporters) {
+      const identity = this.reporterKey(reporter.outlet, reporter.firstName, reporter.lastName);
+      const rowNumber = (idIndex >= 0 ? rowsById.get(reporter.id) : undefined) ?? rowsByIdentity.get(identity);
+      const existing = rowNumber ? rows[rowNumber - 1] ?? [] : [];
+      const fields = valuesByHeader(reporter);
+      const row = headers.map((header, index) => {
+        const canonicalHeader = Object.keys(fields).find((field) => field.toLowerCase() === headerNames[index]);
+        return canonicalHeader ? fields[canonicalHeader]! : existing[index] ?? "";
+      });
+      if (rowNumber) {
+        if (row.every((value, index) => String(existing[index] ?? "") === value) && existing.slice(row.length).every((value) => !String(value ?? ""))) continue;
+        updates.push({ range: quotedTabRange(RAW_REPORTER_TAB, `A${rowNumber}:${endColumn}${rowNumber}`), values: [row] });
+      } else {
+        appends.push(row);
+      }
+    }
+
+    if (appends.length) await this.sheets.spreadsheets.values.append({
+      spreadsheetId: root.reporterSheet,
+      range: quotedTabRange(RAW_REPORTER_TAB, `A:${endColumn}`),
+      valueInputOption: "USER_ENTERED",
+      requestBody: { values: appends }
+    });
+    if (updates.length) await this.sheets.spreadsheets.values.batchUpdate({
+      spreadsheetId: root.reporterSheet,
+      requestBody: { valueInputOption: "USER_ENTERED", data: updates }
+    });
+    return {
+      addedReporterRows: appends.length,
+      updatedReporterRows: updates.length,
+      skippedReporterRows: Math.max(reporters.length - appends.length - updates.length, 0),
+      consideredReporters: reporters.length,
+      deletedReporterRows: 0
+    };
+  }
+
   async syncMasterReporterList(
-    reporters: ReporterRecord[]
-  ): Promise<ReporterSyncSummary> {
+    reporters: ReporterRecord[],
+    options: { writeOnlyKeys?: string[]; archivedReporters?: ReporterRecord[]; addUnlisted?: boolean } = {}
+  ): Promise<ReporterSyncResult> {
     this.ensureConnected();
 
     const root = await this.inspectRoot();
@@ -1144,15 +1482,17 @@ export class GoogleWorkspace {
         "The existing Master Reporter List was not found under the configured root"
       );
     }
+    const cleanedSheetId = await this.reporterTabSheetId(root.reporterSheet, CLEANED_REPORTER_TAB);
 
     const response =
       await this.sheets.spreadsheets.values.get({
         spreadsheetId: root.reporterSheet,
-        range: "A:Z"
+        range: quotedTabRange(CLEANED_REPORTER_TAB, "A:Z")
       });
 
     const existingRows = await this.ensureCanonicalReporterLayout(
       root.reporterSheet,
+      CLEANED_REPORTER_TAB,
       response.data.values ?? []
     );
 
@@ -1168,7 +1508,7 @@ export class GoogleWorkspace {
         rowsById.set(id, rowNumber);
       }
 
-      rowsByKey.set(
+      if (!id) rowsByKey.set(
         this.reporterKey(
           String(row[this.reporterFieldIndex(header, "Outlet")] ?? ""),
           String(row[this.reporterFieldIndex(header, "Reporter First Name")] ?? ""),
@@ -1179,51 +1519,70 @@ export class GoogleWorkspace {
     });
 
     const updates: sheets_v4.Schema$ValueRange[] = [];
+    const updatedRows = new Set<number>();
     const appends: string[][] = [];
     const appendKeys = new Set<string>();
-
-    let skippedReporterRows = 0;
+    const mergedReporters: ReporterRecord[] = [];
+    const mergedArchivedReporters: ReporterRecord[] = [];
+    const expiredRows = new Set<number>();
+    const writeOnlyKeys = options.writeOnlyKeys ? new Set(options.writeOnlyKeys) : null;
 
     for (const reporter of reporters) {
-      const row = this.reporterRow(reporter);
-      const key = this.reporterKey(
+      const localKey = this.reporterKey(
         reporter.outlet,
         reporter.firstName,
         reporter.lastName
       );
-
-      const rowNumber =
-        rowsById.get(reporter.id) ?? rowsByKey.get(key);
+      const identityKeys = [reporter, ...(reporter.identityAliases ?? [])]
+        .map((identity) => this.reporterKey(identity.outlet, identity.firstName, identity.lastName));
+      const rowNumber = (hasReporterId(reporter.id) ? rowsById.get(reporter.id) : undefined) ??
+        identityKeys.map((key) => rowsByKey.get(key)).find((value) => value !== undefined);
 
       if (rowNumber) {
         const existing = existingRows[rowNumber - 1] ?? [];
-
-        const unchanged = row.every(
-          (value, index) =>
-            String(existing[index] ?? "") === value
-        );
-
-        if (unchanged) {
-          skippedReporterRows += 1;
-          continue;
+        const merged = mergeSheetOwnedReporter(reporter, this.reporterFromRow(existing, header));
+        mergedReporters.push(merged);
+        const mergedKey = this.reporterKey(merged.outlet, merged.firstName, merged.lastName);
+        if (writeOnlyKeys && !writeOnlyKeys.has(localKey) && !writeOnlyKeys.has(mergedKey)) continue;
+        const appOwnedCells: Array<{ column: string; index: number; value: string }> = [
+          { column: "A", index: 0, value: merged.id },
+          { column: "G", index: 6, value: merged.clientsCovered },
+          { column: "J", index: 9, value: merged.mostRecentArticle ?? "" }
+        ];
+        for (const cell of appOwnedCells) {
+          if (String(existing[cell.index] ?? "") === cell.value) continue;
+          updates.push({ range: quotedTabRange(CLEANED_REPORTER_TAB, `${cell.column}${rowNumber}`), values: [[cell.value]] });
+          updatedRows.add(rowNumber);
         }
-
-        updates.push({
-          range: `A${rowNumber}:J${rowNumber}`,
-          values: [row]
-        });
-      } else if (!appendKeys.has(key)) {
-        appends.push(row);
-        appendKeys.add(key);
       } else {
-        skippedReporterRows += 1;
+        mergedReporters.push(reporter);
+        if (!options.addUnlisted || (writeOnlyKeys && !writeOnlyKeys.has(localKey))) continue;
+        if (!appendKeys.has(localKey)) {
+          appends.push(this.reporterRow(reporter));
+          appendKeys.add(localKey);
+        }
       }
     }
+
+    for (const reporter of options.archivedReporters ?? []) {
+      const identityKeys = [reporter, ...(reporter.identityAliases ?? [])]
+        .map((identity) => this.reporterKey(identity.outlet, identity.firstName, identity.lastName));
+      const rowNumber = (hasReporterId(reporter.id) ? rowsById.get(reporter.id) : undefined) ??
+        identityKeys.map((key) => rowsByKey.get(key)).find((value) => value !== undefined);
+      if (!rowNumber) {
+        mergedArchivedReporters.push(reporter);
+        continue;
+      }
+      mergedArchivedReporters.push(mergeSheetOwnedReporter(reporter, this.reporterFromRow(existingRows[rowNumber - 1] ?? [], header)));
+      expiredRows.add(rowNumber);
+    }
+
+    const staleRows = [...expiredRows].map((rowNumber) => rowNumber - 1);
 
     if (appends.length) {
       await this.sheets.spreadsheets.values.append({
         spreadsheetId: root.reporterSheet,
-        range: "A:J",
+        range: quotedTabRange(CLEANED_REPORTER_TAB, "A:K"),
         valueInputOption: "USER_ENTERED",
         requestBody: {
           values: appends
@@ -1241,11 +1600,21 @@ export class GoogleWorkspace {
       });
     }
 
+    if (staleRows.length) {
+      await this.sheets.spreadsheets.batchUpdate({
+        spreadsheetId: root.reporterSheet,
+        requestBody: { requests: staleRows.sort((a, b) => b - a).map((rowIndex) => ({ deleteDimension: { range: { sheetId: cleanedSheetId, dimension: "ROWS", startIndex: rowIndex, endIndex: rowIndex + 1 } } })) }
+      });
+    }
+
     return {
       addedReporterRows: appends.length,
-      updatedReporterRows: updates.length,
-      skippedReporterRows,
-      consideredReporters: reporters.length
+      updatedReporterRows: updatedRows.size,
+      skippedReporterRows: Math.max(mergedReporters.length - appends.length - updatedRows.size, 0),
+      consideredReporters: reporters.length,
+      deletedReporterRows: expiredRows.size,
+      mergedReporters,
+      mergedArchivedReporters
     };
   }
 
@@ -1262,20 +1631,25 @@ export class GoogleWorkspace {
         "The existing Master Reporter List was not found under the configured root"
       );
     }
+    await this.reporterTabSheetId(root.reporterSheet, CLEANED_REPORTER_TAB);
 
     const response =
       await this.sheets.spreadsheets.values.get({
         spreadsheetId: root.reporterSheet,
-        range: "A:Z"
+        range: quotedTabRange(CLEANED_REPORTER_TAB, "A:Z")
       });
 
     const rows = await this.ensureCanonicalReporterLayout(
       root.reporterSheet,
+      CLEANED_REPORTER_TAB,
       response.data.values ?? []
     );
     const header = REPORTER_HEADERS;
     const localReportersById = new Map(
       localReporters.map((reporter) => [reporter.id, reporter])
+    );
+    const localReportersByKey = new Map(
+      localReporters.map((reporter) => [this.reporterKey(reporter.outlet, reporter.firstName, reporter.lastName), reporter])
     );
 
     const rowsById = new Map<string, number>();
@@ -1288,18 +1662,19 @@ export class GoogleWorkspace {
       const firstNameIndex = this.reporterFieldIndex(header, "Reporter First Name");
       const lastNameIndex = this.reporterFieldIndex(header, "Reporter Last Name");
 
-      if (row[idIndex >= 0 ? idIndex : 0]) {
-        rowsById.set(String(row[idIndex >= 0 ? idIndex : 0]).trim(), rowNumber);
+      const rowId = String(row[idIndex >= 0 ? idIndex : 0] ?? "").trim();
+      if (rowId) {
+        rowsById.set(rowId, rowNumber);
+      } else {
+        rowsByKey.set(
+          this.reporterKey(
+            String(row[outletIndex >= 0 ? outletIndex : 1] ?? ""),
+            String(row[firstNameIndex >= 0 ? firstNameIndex : 2] ?? ""),
+            String(row[lastNameIndex >= 0 ? lastNameIndex : 3] ?? "")
+          ),
+          rowNumber
+        );
       }
-
-      rowsByKey.set(
-        this.reporterKey(
-          String(row[outletIndex >= 0 ? outletIndex : 1] ?? ""),
-          String(row[firstNameIndex >= 0 ? firstNameIndex : 2] ?? ""),
-          String(row[lastNameIndex >= 0 ? lastNameIndex : 3] ?? "")
-        ),
-        rowNumber
-      );
     });
 
     const updates: sheets_v4.Schema$ValueRange[] = [];
@@ -1324,34 +1699,38 @@ export class GoogleWorkspace {
         "",
         normalizeBeats(proposal.beats).join(", "),
         "",
+        localReportersById.get(proposal.reporterId ?? "")?.mostRecentArticle ?? "",
         proposal.status === "verified"
           ? "Active"
           : "Needs Review"
       ];
 
-      const rowNumber =
-        (proposal.reporterId &&
-          rowsById.get(proposal.reporterId)) ??
-        rowsByKey.get(
-          this.reporterKey(
-            row[1],
-            row[2],
-            row[3]
-          )
-        );
+      const localReporter = proposal.reporterId
+        ? localReportersById.get(proposal.reporterId)
+        : localReportersByKey.get(this.reporterKey(row[1], row[2], row[3]));
+      const identityKeys = localReporter
+        ? [localReporter, ...(localReporter.identityAliases ?? [])]
+            .map((identity) => this.reporterKey(identity.outlet, identity.firstName, identity.lastName))
+        : [this.reporterKey(row[1], row[2], row[3])];
+      const rowNumber = (proposal.reporterId ? rowsById.get(proposal.reporterId) : undefined) ??
+        identityKeys.map((key) => rowsByKey.get(key)).find((value) => value !== undefined);
 
       if (rowNumber) {
         const existingRow = rows[rowNumber - 1] ?? [];
-        // These two fields are managed by people, never enrichment.
-        row[6] = String(existingRow[6] ?? "");
+        // Clients and recency are system-owned; notes are human-owned and
+        // enrichment proposals do not have permission to change them.
+        row[0] = String(existingRow[0] || localReporter?.id || "");
+        row[6] = localReporter?.clientsCovered ?? String(existingRow[6] ?? "");
         row[8] = String(existingRow[8] ?? "");
+        row[9] = localReporter?.mostRecentArticle ?? "";
 
         updates.push({
-          range: `A${rowNumber}:J${rowNumber}`,
+          range: quotedTabRange(CLEANED_REPORTER_TAB, `A${rowNumber}:K${rowNumber}`),
           values: [row]
         });
       } else {
-        row[6] = localReportersById.get(proposal.reporterId ?? "")?.clientsCovered ?? "";
+        row[0] = localReporter?.id ?? row[0];
+        row[6] = localReporter?.clientsCovered ?? "";
         appends.push(row);
       }
     }
@@ -1359,7 +1738,7 @@ export class GoogleWorkspace {
     if (appends.length) {
       await this.sheets.spreadsheets.values.append({
         spreadsheetId: root.reporterSheet,
-        range: "A:J",
+        range: quotedTabRange(CLEANED_REPORTER_TAB, "A:K"),
         valueInputOption: "USER_ENTERED",
         requestBody: {
           values: appends
@@ -1394,8 +1773,30 @@ export class GoogleWorkspace {
       reporter.clientsCovered,
       reporter.beats,
       reporter.notes,
+      reporter.mostRecentArticle ?? "",
       reporter.status
     ];
+  }
+
+  private reporterFromRow(row: string[], headers: string[]): ReporterRecord {
+    const value = (name: string, fallbackIndex: number) => {
+      const index = this.reporterFieldIndex(headers, name);
+      return String(row[index >= 0 ? index : fallbackIndex] ?? "");
+    };
+    const rawStatus = value("Status", 10);
+    return {
+      id: value("ID", 0),
+      outlet: value("Outlet", 1),
+      firstName: value("Reporter First Name", 2),
+      lastName: value("Reporter Last Name", 3),
+      email: value("Email", 4),
+      reporterType: value("Reporter Type", 5).trim() === "" ? "" : normalizeReporterType(value("Reporter Type", 5)),
+      clientsCovered: value("Clients Covered", 6),
+      beats: value("Beats", 7),
+      notes: value("Notes", 8),
+      mostRecentArticle: value("Most Recent Article", 9),
+      status: rawStatus === "" ? "" : rawStatus === "Inactive" ? "Inactive" : rawStatus === "Needs Review" ? "Needs Review" : "Active"
+    };
   }
 
   private reporterFieldIndex(headers: string[], headerName: string): number {
@@ -1408,6 +1809,7 @@ export class GoogleWorkspace {
 
   private async ensureCanonicalReporterLayout(
     spreadsheetId: string,
+    tabTitle: string,
     rows: unknown[][]
   ): Promise<string[][]> {
     const header = (rows[0] ?? []).map((value) => String(value ?? ""));
@@ -1428,11 +1830,11 @@ export class GoogleWorkspace {
         )
       : [];
 
-    // Map by the existing header names before writing the fixed A:J schema;
+    // Map by the existing header names before writing the fixed A:K schema;
     // this preserves legacy client and note cells without relying on 8-column positions.
     await this.sheets.spreadsheets.values.update({
       spreadsheetId,
-      range: `A1:J${Math.max(canonicalRows.length + 1, 1)}`,
+      range: quotedTabRange(tabTitle, `A1:K${Math.max(canonicalRows.length + 1, 1)}`),
       valueInputOption: "USER_ENTERED",
       requestBody: { values: [REPORTER_HEADERS, ...canonicalRows] }
     });

@@ -3,28 +3,37 @@ import express from "express";
 import multer from "multer";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 
 import { ingest } from "./ingestion.js";
 import { migrateCoverageFromSources } from "./coverage-migration.js";
-import { GoogleWorkspace } from "./google.ts";
+import { configuredGoogleRedirectUri, GoogleWorkspace } from "./google.ts";
 import { parseInput } from "./parser.js";
 import { StructuredStore } from "./store.js";
 import { ReporterEnrichmentService } from "./enrichment.js";
 import { normalizeReporterType, type ContactRecord, type ExtractedCoverage, type ReporterRecord, type ReporterStatus } from "./domain.js";
+import { CANONICAL_BEATS } from "../public/canonical-beats.js";
 import { normalizeName } from "./normalize.js";
 import { resolveReporter } from "./coverage-resolvers.js";
 import { selectCoverageUrlResolutionRecords } from "./url-enrichment.js";
 import { expectedOutletDomainsFor } from "./outlet-domain-matching.js";
 import { diagnoseOptoUnresolvedOutletDomains } from "./outlet-domain-diagnostic.js";
+import { runReadOnlyReporterPreflight } from "./reporter-preflight.js";
+import { loadReporterDirectorySnapshot } from "./reporter-directory-source.js";
+import { readPersistentFile, writePersistentFile } from "./persistent-files.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 dotenv.config({
   path: path.resolve(__dirname, "../.env"),
-  override: true
+  override: false
 });
 
 const app = express();
+const appAccessPassword = process.env.APP_ACCESS_PASSWORD?.trim();
+if (process.env.VERCEL === "1" && !appAccessPassword) {
+  throw new Error("APP_ACCESS_PASSWORD must be configured before deploying this public application");
+}
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -36,17 +45,22 @@ const upload = multer({
 const storePath = path.resolve(
   process.env.DATA_FILE ?? "data/store.json"
 );
+const reporterPreflightReadOnly = process.env.REPORTER_PREFLIGHT_READ_ONLY === "1";
 
 console.log("[STORE] DATA_FILE:", process.env.DATA_FILE ?? "(default data/store.json)");
 console.log("[STORE] RESOLVED STORE PATH:", storePath);
 console.log("[STORE] CURRENT WORKING DIRECTORY:", process.cwd());
 
 const store = new StructuredStore(storePath);
-await store.load();
-const duplicateCleanup = await store.deduplicateCoverage();
-console.log("[STORE] Coverage duplicate cleanup:", duplicateCleanup);
-const migration = await migrateCoverageFromSources(store, storePath);
-console.log("[MIGRATION] Coverage sources:", migration);
+await store.load({ readOnly: reporterPreflightReadOnly });
+if (reporterPreflightReadOnly) {
+  console.log("[STORE] Read-only reporter preflight mode: startup cleanup and Coverage migration skipped");
+} else {
+  const duplicateCleanup = await store.deduplicateCoverage();
+  console.log("[STORE] Coverage duplicate cleanup:", duplicateCleanup);
+  const migration = await migrateCoverageFromSources(store, storePath);
+  console.log("[MIGRATION] Coverage sources:", migration);
+}
 
 const enrichment = new ReporterEnrichmentService(
   path.resolve(
@@ -58,9 +72,132 @@ const enrichment = new ReporterEnrichmentService(
 
 let workspace: GoogleWorkspace | undefined;
 let reportersHydrated = false;
+const appConfigPath = path.resolve(process.env.APP_CONFIG_FILE ?? "data/app-config.json");
+const googleAuthPath = path.resolve(process.env.GOOGLE_AUTH_FILE ?? "data/google-auth.json");
+const GOOGLE_STATE_COOKIE = "mlb_oauth_state";
+const APP_SESSION_COOKIE = "mlb_app_session";
+
+function secureCookie(request: express.Request): boolean {
+  return process.env.VERCEL === "1" || request.secure || request.get("x-forwarded-proto") === "https";
+}
+
+function setOAuthStateCookie(request: express.Request, response: express.Response, state: string): void {
+  const secure = secureCookie(request) ? "; Secure" : "";
+  response.append("Set-Cookie", `${GOOGLE_STATE_COOKIE}=${state}; Path=/; HttpOnly; SameSite=Lax; Max-Age=600${secure}`);
+}
+
+function clearOAuthStateCookie(request: express.Request, response: express.Response): void {
+  const secure = secureCookie(request) ? "; Secure" : "";
+  response.append("Set-Cookie", `${GOOGLE_STATE_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secure}`);
+}
+
+function requestCookie(request: express.Request, name: string): string {
+  const prefix = `${name}=`;
+  return String(request.headers.cookie ?? "").split(";").map((value) => value.trim()).find((value) => value.startsWith(prefix))?.slice(prefix.length) ?? "";
+}
+
+function constantTimeEqual(left: string, right: string): boolean {
+  const leftBuffer = Buffer.from(left);
+  const rightBuffer = Buffer.from(right);
+  return leftBuffer.length === rightBuffer.length && timingSafeEqual(leftBuffer, rightBuffer);
+}
+
+function appSessionValue(expiration: string): string {
+  return createHmac("sha256", appAccessPassword ?? "")
+    .update(expiration)
+    .digest("base64url");
+}
+
+function hasValidAppSession(request: express.Request): boolean {
+  if (!appAccessPassword) return true;
+  const [expiration, signature] = requestCookie(request, APP_SESSION_COOKIE).split(".");
+  if (!expiration || !signature || Number(expiration) <= Date.now()) return false;
+  return constantTimeEqual(signature, appSessionValue(expiration));
+}
+
+function setAppSessionCookie(request: express.Request, response: express.Response): void {
+  const expiration = String(Date.now() + 8 * 60 * 60 * 1000);
+  const value = `${expiration}.${appSessionValue(expiration)}`;
+  const secure = secureCookie(request) ? "; Secure" : "";
+  response.append("Set-Cookie", `${APP_SESSION_COOKIE}=${value}; Path=/; HttpOnly; SameSite=Lax; Max-Age=28800${secure}`);
+}
+
+function addOAuthState(url: string, request: express.Request, response: express.Response): string {
+  const state = randomUUID();
+  setOAuthStateCookie(request, response, state);
+  const authorization = new URL(url);
+  authorization.searchParams.set("state", state);
+  return authorization.toString();
+}
+
+async function readOptionalJson<T>(filePath: string): Promise<T | undefined> {
+  try { return JSON.parse(await readPersistentFile(filePath)) as T; } catch { return undefined; }
+}
+
+async function persistGoogleWorkspace(): Promise<void> {
+  if (!workspace) return;
+  await writePersistentFile(appConfigPath, JSON.stringify({ rootFolderId: workspace.rootFolderId }));
+  await writePersistentFile(googleAuthPath, JSON.stringify(workspace.connected ? workspace.credentials : {}));
+}
+
+async function hydrateGoogleWorkspace(): Promise<void> {
+  const persistedGoogleConfig = await readOptionalJson<{ rootFolderId?: string }>(appConfigPath);
+  const persistedGoogleCredentials = await readOptionalJson<import("google-auth-library").Credentials>(googleAuthPath);
+  if (!persistedGoogleConfig?.rootFolderId) {
+    workspace = undefined;
+    return;
+  }
+  const hasGoogleToken = Boolean(persistedGoogleCredentials?.refresh_token || persistedGoogleCredentials?.access_token);
+  workspace = new GoogleWorkspace(persistedGoogleConfig.rootFolderId, hasGoogleToken ? persistedGoogleCredentials : undefined);
+}
+await hydrateGoogleWorkspace();
 
 app.use(express.json());
+if (appAccessPassword) {
+  app.use((request, response, next) => {
+    if (request.path === "/api/auth/login" && request.method === "POST") return next();
+    if (hasValidAppSession(request)) return next();
+    return response.status(401).set("X-App-Auth-Required", "1").json({ error: "Application access is required" });
+  });
+}
+let vercelRequestQueue = Promise.resolve();
+app.use(async (_request, response, next) => {
+  if (process.env.VERCEL !== "1") return next();
+  const previous = vercelRequestQueue;
+  let release!: () => void;
+  vercelRequestQueue = new Promise<void>((resolve) => { release = resolve; });
+  await previous;
+  let released = false;
+  const releaseOnce = () => {
+    if (released) return;
+    released = true;
+    release();
+  };
+  response.once("finish", releaseOnce);
+  response.once("close", releaseOnce);
+  try {
+    await store.load({ readOnly: reporterPreflightReadOnly });
+    await hydrateGoogleWorkspace();
+    next();
+  } catch (error) {
+    releaseOnce();
+    response.status(503).json({ error: error instanceof Error ? error.message : "Persistent application state could not be loaded" });
+  }
+});
 app.use(express.static(path.resolve(__dirname, "../public")));
+
+// Diagnostic mode keeps existing mutations blocked, with a narrow exception for
+// creating an explicitly requested, new media-list spreadsheet.
+if (reporterPreflightReadOnly) {
+  const callbackPath = new URL(configuredGoogleRedirectUri()).pathname;
+  app.use((request, response, next) => {
+    const allowed =
+      (request.method === "GET" && ["/api/diagnostics/reporter-preflight", "/api/status", "/api/reference-data", "/api/coverage-data", "/auth/google", callbackPath, "/api/media-list/google/status"].includes(request.path)) ||
+      (request.method === "POST" && ["/api/auth/login", "/api/config", "/api/media-list/google/connect", "/api/media-list/google/authorize", "/api/media-list/google/sheets"].includes(request.path));
+    if (allowed || !request.path.startsWith("/api/")) return next();
+    return response.status(403).json({ readOnly: true, error: "Only reporter preflight and OAuth setup are enabled in read-only mode" });
+  });
+}
 
 /* ============================================================
    HELPERS
@@ -93,6 +230,14 @@ function getAllLocalReporters() {
   return store.snapshot.reporters;
 }
 
+async function persistReporterSync(result: Awaited<ReturnType<GoogleWorkspace["syncMasterReporterList"]>>) {
+  for (const reporter of result.mergedReporters) store.updateReporter(reporter);
+  for (const reporter of result.mergedArchivedReporters) store.updateArchivedReporter(reporter);
+  await store.save();
+  const { mergedReporters: _merged, mergedArchivedReporters: _mergedArchived, ...summary } = result;
+  return summary;
+}
+
 /** Select a deterministic local client only when an endpoint caller omits one. */
 function defaultLocalClientName(): string {
   const snapshot = store.snapshot;
@@ -116,11 +261,24 @@ async function getMasterOutlets() {
   return workspace.loadOutlets(root.outletSheet);
 }
 
+async function loadGoogleMasterReporters(): Promise<ReporterRecord[]> {
+  const connectedWorkspace = workspace;
+  if (!connectedWorkspace?.connected) throw new Error("Google disconnected while loading Master Directory (Cleaned)");
+  const root = await connectedWorkspace.inspectRoot();
+  if (!root.reporterSheet) throw new Error("The connected Google reporter spreadsheet has no Master Directory (Cleaned) tab");
+  return connectedWorkspace.loadReporters(root.reporterSheet);
+}
+
+async function getMasterReporterDirectory() {
+  return loadReporterDirectorySnapshot(
+    Boolean(workspace?.connected),
+    store.snapshot.reporters,
+    loadGoogleMasterReporters
+  );
+}
+
 async function getMasterReporters() {
-  if (!workspace?.connected) return store.snapshot.reporters;
-  const root = await workspace.inspectRoot();
-  if (!root.reporterSheet) return store.snapshot.reporters;
-  return workspace.loadReporters(root.reporterSheet);
+  return (await getMasterReporterDirectory()).reporters;
 }
 
 function contactIdentity(contact: Pick<ContactRecord, "clientName" | "name" | "title" | "email" | "phone">): string {
@@ -195,6 +353,7 @@ async function buildCoverageReport(clientName: string) {
       beats: "",
       reporterType: "reporter",
       notes: "",
+      mostRecentArticle: "",
       status: "Needs Review"
     });
   }
@@ -286,6 +445,15 @@ function mergeClientsCovered(
    STATUS
 ============================================================ */
 
+app.post("/api/auth/login", (request, response) => {
+  const supplied = String(request.body?.password ?? "");
+  if (!appAccessPassword || !constantTimeEqual(supplied, appAccessPassword)) {
+    return response.status(401).json({ error: "The application password is incorrect" });
+  }
+  setAppSessionCookie(request, response);
+  return response.json({ authenticated: true });
+});
+
 app.get("/api/status", (_request, response) => {
   response.json({
     configured: Boolean(workspace),
@@ -296,14 +464,58 @@ app.get("/api/status", (_request, response) => {
 });
 
 app.get("/api/reference-data", async (_request, response) => {
+  let reporterDirectory: Awaited<ReturnType<typeof getMasterReporterDirectory>>;
+  try {
+    reporterDirectory = await getMasterReporterDirectory();
+  } catch (error) {
+    const googleConnected = Boolean(workspace?.connected);
+    return response.status(502).json({
+      error: error instanceof Error ? error.message : "Unable to load Master Directory",
+      ...(googleConnected ? { reporterSource: {
+        kind: "google",
+        label: "Master Directory (Cleaned)",
+        authoritative: true,
+        error: "Google Master Directory could not be loaded; local fallback was not used"
+      } } : {})
+    });
+  }
   try {
     return response.json({
-      reporters: await getMasterReporters(),
+      reporters: reporterDirectory.reporters,
+      reporterSource: reporterDirectory.reporterSource,
+      canonicalBeats: CANONICAL_BEATS,
+      clients: [...new Set(reporterDirectory.reporters.flatMap((reporter) => String(reporter.clientsCovered ?? "").split(/[,;|]/).map((name) => name.trim()).filter(Boolean)))].sort((a, b) => a.localeCompare(b)),
       outlets: await getMasterOutlets()
     });
   } catch (error) {
     return response.status(502).json({
-      error: error instanceof Error ? error.message : "Unable to load master sources"
+      error: error instanceof Error ? error.message : "Unable to load master sources",
+      reporterSource: reporterDirectory.reporterSource
+    });
+  }
+});
+
+// Explicit migration endpoint used only by `npm run migrate:canonical-beats`.
+// It is intentionally not called during startup or ordinary reference reads.
+app.post("/api/migrations/canonical-beats", async (request, response) => {
+  if (!workspace?.connected) return response.status(503).json({ error: "Google authorization is required for the canonical-beat migration" });
+  try {
+    const dryRun = request.body?.dryRun !== false;
+    return response.json(await workspace.migrateCanonicalBeats({
+      dryRun,
+      expectedSnapshotFingerprint: String(request.body?.expectedSnapshotFingerprint ?? "") || undefined
+    }));
+  } catch (error) {
+    return response.status(502).json({ error: error instanceof Error ? error.message : "Canonical-beat migration failed" });
+  }
+});
+
+app.get("/api/coverage-data", (_request, response) => {
+  try {
+    return response.json({ coverage: store.snapshot.coverage });
+  } catch (error) {
+    return response.status(500).json({
+      error: error instanceof Error ? error.message : "Unable to load coverage data"
     });
   }
 });
@@ -416,7 +628,7 @@ app.post("/api/coverage", async (request, response) => {
    GOOGLE CONFIG
 ============================================================ */
 
-app.post("/api/config", (request, response) => {
+app.post("/api/config", async (request, response) => {
   const rootFolderId = extractFolderId(
     String(request.body.rootFolderId ?? "")
   );
@@ -429,14 +641,12 @@ app.post("/api/config", (request, response) => {
 
   try {
     workspace = new GoogleWorkspace(rootFolderId);
+    await persistGoogleWorkspace();
 
-    console.log(
-      "[GOOGLE] Workspace configured:",
-      rootFolderId
-    );
+    console.log("[GOOGLE] Workspace configured");
 
     return response.json({
-      authorizationUrl: workspace.authorizationUrl
+      authorizationUrl: addOAuthState(workspace.authorizationUrl, request, response)
     });
   } catch (error) {
     return response.status(500).json({
@@ -455,7 +665,7 @@ app.get("/auth/google", (_request, response) => {
     );
   }
 
-  return response.redirect(workspace.authorizationUrl);
+  return response.redirect(addOAuthState(workspace.authorizationUrl, _request, response));
 });
 
 /* ============================================================
@@ -463,8 +673,7 @@ app.get("/auth/google", (_request, response) => {
 ============================================================ */
 
 const googleCallbackPath = new URL(
-  process.env.GOOGLE_REDIRECT_URI?.trim() ??
-    "http://localhost:3000/oauth2callback"
+  configuredGoogleRedirectUri()
 ).pathname;
 
 app.get(
@@ -481,6 +690,12 @@ app.get(
         request.query.code ?? ""
       ).trim();
 
+      const returnedState = String(request.query.state ?? "");
+      const savedState = requestCookie(request, GOOGLE_STATE_COOKIE);
+      if (!savedState || !returnedState || !constantTimeEqual(savedState, returnedState)) {
+        throw new Error("Google authorization state is missing or expired");
+      }
+
       if (!code) {
         throw new Error(
           "Google authorization code was missing"
@@ -488,30 +703,15 @@ app.get(
       }
 
       await workspace.authorize(code);
+      await persistGoogleWorkspace();
+      clearOAuthStateCookie(request, response);
 
       console.log(
         "[GOOGLE] Authorization successful"
       );
 
-      const root = await workspace.inspectRoot();
-
-      if (root.reporterSheet) {
-        const reporters =
-          await workspace.loadReporters(
-            root.reporterSheet
-          );
-
-        for (const reporter of reporters) {
-          store.upsertReporter(reporter);
-        }
-
-        await store.save();
-
-        reportersHydrated = true;
-
-        console.log(
-          `[GOOGLE] Hydrated ${reporters.length} reporters`
-        );
+      if (reporterPreflightReadOnly) {
+        return response.redirect("/?connected=1&readOnly=1");
       }
 
       return response.redirect(
@@ -537,6 +737,73 @@ app.get(
 /* ============================================================
    GOOGLE DIAGNOSTICS
 ============================================================ */
+
+// This endpoint performs Google metadata/value reads only. It uses a cloned
+// store snapshot and never invokes migration, store mutation, or sync methods.
+app.get("/api/diagnostics/reporter-preflight", async (_request, response) => {
+  if (!workspace?.connected) {
+    return response.status(503).json({ error: "Google authorization is required for the read-only reporter preflight" });
+  }
+  try {
+    return response.json({ readOnly: true, ...(await runReadOnlyReporterPreflight(workspace, store)) });
+  } catch (error) {
+    return response.status(502).json({
+      readOnly: true,
+      error: error instanceof Error ? error.message : "Reporter preflight failed"
+    });
+  }
+});
+
+app.get("/api/media-list/google/status", (_request, response) => {
+  return response.json({ connected: Boolean(workspace?.connected), configured: Boolean(process.env.GOOGLE_CLIENT_ID?.trim() && process.env.GOOGLE_CLIENT_SECRET?.trim()) });
+});
+
+app.post("/api/media-list/google/connect", async (_request, response) => {
+  try {
+    if (!workspace) {
+      workspace = new GoogleWorkspace("root");
+      await persistGoogleWorkspace();
+    }
+    return response.json({ authorizationUrl: addOAuthState(workspace.authorizationUrl, _request, response) });
+  } catch (error) {
+    return response.status(503).json({ error: error instanceof Error ? error.message : "Google OAuth is not configured" });
+  }
+});
+
+app.post("/api/media-list/google/authorize", async (request, response) => {
+  const code = String(request.body.code ?? "").trim();
+  const state = String(request.body.state ?? "").trim();
+  const savedState = requestCookie(request, GOOGLE_STATE_COOKIE);
+  if (!workspace || !savedState || !state || !constantTimeEqual(savedState, state)) {
+    return response.status(400).json({ error: "Google authorization state is missing or expired" });
+  }
+  if (!code) return response.status(400).json({ error: "Google authorization code is missing" });
+  try {
+    await workspace.authorize(code);
+    await persistGoogleWorkspace();
+    clearOAuthStateCookie(request, response);
+    return response.json({ connected: true });
+  } catch (error) {
+    return response.status(502).json({ error: error instanceof Error ? error.message : "Google authorization failed" });
+  }
+});
+
+app.post("/api/media-list/google/sheets", async (request, response) => {
+  if (!workspace?.connected) return response.status(401).json({ error: "Google connection is required. Connect Google, then create the sheet again." });
+  const title = String(request.body.title ?? "").trim();
+  const headers = request.body.headers;
+  const rows = request.body.rows;
+  const expectedHeaders = ["Owner/Date Pitched", "Outlet", "Reporter First Name", "Reporter Last Name", "Email", "Reporter Type", "Clients Covered", "Profile", "Notes"];
+  if (!title || !Array.isArray(headers) || headers.length !== expectedHeaders.length || headers.some((value: unknown, index: number) => value !== expectedHeaders[index]) || !Array.isArray(rows) || rows.some((row: unknown) => !Array.isArray(row) || row.length !== expectedHeaders.length || row.some((value: unknown) => typeof value !== "string"))) {
+    return response.status(400).json({ error: "The media-list spreadsheet payload is invalid" });
+  }
+  try {
+    const result = await workspace.createMediaListSpreadsheet(title, headers, rows);
+    return response.json({ ...result, title });
+  } catch (error) {
+    return response.status(502).json({ error: error instanceof Error ? error.message : "Unable to create the Google Sheet" });
+  }
+});
 
 app.get("/api/diagnostics/opto-outlet-domains", async (_request, response) => {
   try {
@@ -658,22 +925,7 @@ app.post(
             )
           : getAllLocalRecords();
 
-      const reporterIds = new Set(
-        records
-          .map((record) =>
-            record.reporterId?.trim()
-          )
-          .filter(
-            (value): value is string =>
-              Boolean(value)
-          )
-      );
-
-      const reporters =
-        getAllLocalReporters().filter(
-          (reporter) =>
-            reporterIds.has(reporter.id)
-        );
+      const reporters = await store.prepareCurrentReporters();
 
       console.log(
         `[SYNC] Starting full local sync: ${records.length} coverage records, ${reporters.length} reporters`
@@ -685,10 +937,14 @@ app.post(
           teamContacts: store.snapshot.teamContacts
         });
 
+      const rawReporterSync = await workspace.syncRawReporterStaging(reporters);
+
       const reportersSync =
         await workspace.syncMasterReporterList(
-          reporters
+          reporters,
+          { archivedReporters: store.snapshot.archivedReporters }
         );
+      const reporterSyncSummary = await persistReporterSync(reportersSync);
 
       console.log("[SYNC] Complete", {
         clients: coverage.clients.length,
@@ -697,11 +953,11 @@ app.post(
         coverageSkipped:
           coverage.totalSkippedCoverageRows,
         reportersAdded:
-          reportersSync.addedReporterRows,
+          reporterSyncSummary.addedReporterRows,
         reportersUpdated:
-          reportersSync.updatedReporterRows,
+          reporterSyncSummary.updatedReporterRows,
         reportersSkipped:
-          reportersSync.skippedReporterRows
+          reporterSyncSummary.skippedReporterRows
       });
 
       return response.json({
@@ -712,7 +968,8 @@ app.post(
           coverage.totalAddedCoverageRows,
         skippedCoverageRows:
           coverage.totalSkippedCoverageRows,
-        reporterSync: reportersSync,
+        reporterSync: reporterSyncSummary,
+        rawReporterSync,
         debug: coverage.debug
       });
     } catch (error) {
@@ -753,8 +1010,7 @@ app.post(
       const records =
         getAllLocalRecords();
 
-      const reporters =
-        getAllLocalReporters();
+      const reporters = await store.prepareCurrentReporters();
 
       const requestedClients: string[] = Array.isArray(
         request.body?.clients
@@ -766,27 +1022,12 @@ app.post(
             .filter(Boolean)
         : [];
 
-      const filteredReporters =
-        requestedClients.length > 0
-          ? reporters.filter((reporter) => {
-              const covered =
-                reporter.clientsCovered
-                  .split(",")
-                  .map((value) => value.trim())
-                  .filter(Boolean);
-
-              return requestedClients.some(
-                (client) =>
-                  covered.some(
-                    (coveredClient) =>
-                      normalizeName(
-                        coveredClient
-                      ) ===
-                      normalizeName(client)
-                  )
-              );
-            })
-          : reporters;
+      const writeOnlyKeys = requestedClients.length
+        ? reporters.filter((reporter) => {
+            const covered = reporter.clientsCovered.split(",").map((value) => normalizeName(value));
+            return requestedClients.some((client) => covered.includes(normalizeName(client)));
+          }).map((reporter) => [reporter.outlet, reporter.firstName, reporter.lastName].map(normalizeName).join("|"))
+        : undefined;
 
       const root =
         await workspace.inspectRoot();
@@ -799,10 +1040,10 @@ app.post(
 
       const uniqueReporters = new Map<
         string,
-        typeof filteredReporters[number]
+        ReporterRecord
       >();
 
-      for (const reporter of filteredReporters) {
+      for (const reporter of reporters) {
         const key = [
           reporter.outlet,
           reporter.firstName,
@@ -833,17 +1074,19 @@ app.post(
           );
       }
 
-      const result =
-        await workspace.syncMasterReporterList(
-          [...uniqueReporters.values()]
-        );
+      const reportersToStage = [...uniqueReporters.values()].filter((reporter) => {
+        if (!writeOnlyKeys) return true;
+        const key = [reporter.outlet, reporter.firstName, reporter.lastName].map(normalizeName).join("|");
+        return writeOnlyKeys.includes(key);
+      });
+      const reporterSyncSummary = await workspace.syncRawReporterStaging(reportersToStage);
 
       console.log(
-        `[REPORTERS] Synced ${uniqueReporters.size} local reporters`
+        `[REPORTERS] Staged ${reportersToStage.length} local reporters in Sheet1`
       );
 
       return response.json({
-        ...result,
+        ...reporterSyncSummary,
         localRecordsConsidered:
           records.length,
         localReporters:
@@ -1021,6 +1264,7 @@ app.post(
           })(),
           beats: proposal.beats.join(", "),
           notes: "",
+          mostRecentArticle: "",
           status: reporterStatus,
           reporterType: normalizeReporterType(proposal.reporterType)
         };
@@ -1059,11 +1303,18 @@ app.post(
         );
       }
 
+      const reportersForApprovedFlow = await store.prepareCurrentReporters();
       const result =
         await workspace.applyEnrichmentProposals(
           approved,
-          store.snapshot.reporters
+          reportersForApprovedFlow
         );
+      const currentReporters = await store.prepareCurrentReporters();
+      const reporterSync = await workspace.syncMasterReporterList(currentReporters, {
+        writeOnlyKeys: [],
+        archivedReporters: store.snapshot.archivedReporters
+      });
+      await persistReporterSync(reporterSync);
 
       return response.json({
         ...result,
@@ -1178,21 +1429,22 @@ app.post(
             );
         }
 
-        if (
-          result.discoveredReporterIds.length
-        ) {
-          const discovered =
-            store.snapshot.reporters.filter(
-              (reporter) =>
-                result.discoveredReporterIds.includes(
-                  reporter.id
-                )
-            );
-
-          reporterSync =
-            await workspace.syncMasterReporterList(
-              discovered
-            );
+        const reporterIdsToStage = new Set([
+          ...result.discoveredReporterIds,
+          ...result.records.map((record) => record.reporterId ?? "").filter(Boolean)
+        ]);
+        if (reporterIdsToStage.size) {
+          const currentReporters = await store.prepareCurrentReporters();
+          const snapshot = store.snapshot;
+          const reportersToStage = [...snapshot.reporters, ...snapshot.archivedReporters]
+            .filter((reporter) => reporterIdsToStage.has(reporter.id));
+          const rawSync = await workspace.syncRawReporterStaging(reportersToStage);
+          const canonicalSync = await workspace.syncMasterReporterList(currentReporters, {
+            archivedReporters: snapshot.archivedReporters,
+            addUnlisted: false
+          });
+          const canonicalSummary = await persistReporterSync(canonicalSync);
+          reporterSync = { ...canonicalSummary, rawReporterSync: rawSync };
         }
       }
 
@@ -1251,12 +1503,12 @@ app.get("*", (_request, response) => {
    START
 ============================================================ */
 
-const port = Number(
-  process.env.PORT ?? 3000
-);
+export default app;
 
-app.listen(port, () => {
-  console.log(
-    `Media List Builder running at http://localhost:${port}`
-  );
-});
+const invokedFile = process.argv[1] ? path.resolve(process.argv[1]) : "";
+if (invokedFile === fileURLToPath(import.meta.url)) {
+  const port = Number(process.env.PORT ?? 3001);
+  app.listen(port, () => {
+    console.log(`Media List Builder running at http://localhost:${port}`);
+  });
+}

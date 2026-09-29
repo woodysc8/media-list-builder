@@ -1,5 +1,5 @@
 ﻿import { randomUUID } from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { readPersistentFile, writePersistentFile } from "./persistent-files.js";
 import path from "node:path";
 import {
   CANONICAL_BEATS,
@@ -516,7 +516,7 @@ export class ReporterEnrichmentService {
     let existing: EnrichmentRateLimit;
     try {
       existing = JSON.parse(
-        await readFile(this.rateLimitFile, "utf8")
+        await readPersistentFile(this.rateLimitFile, "utf8")
       ) as EnrichmentRateLimit;
     } catch {
       return fallback;
@@ -532,9 +532,9 @@ export class ReporterEnrichmentService {
       );
 
       try {
-        await readFile(backupFile, "utf8");
+        await readPersistentFile(backupFile, "utf8");
       } catch {
-        await writeFile(
+        await writePersistentFile(
           backupFile,
           `${JSON.stringify(existing, null, 2)}\n`,
           "utf8"
@@ -1699,7 +1699,7 @@ async function readJson<T>(
 ): Promise<T> {
   try {
     return JSON.parse(
-      await readFile(
+      await readPersistentFile(
         filePath,
         "utf8"
       )
@@ -1713,16 +1713,7 @@ async function writeJson(
   filePath: string,
   value: unknown
 ): Promise<void> {
-  await mkdir(
-    path.dirname(
-      filePath
-    ),
-    {
-      recursive: true
-    }
-  );
-
-  await writeFile(
+  await writePersistentFile(
     filePath,
     `${JSON.stringify(
       value,

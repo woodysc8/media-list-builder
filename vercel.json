@@ -1,0 +1,10 @@
+{
+  "functions": {
+    "src/server.ts": {
+      "includeFiles": [
+        "data/**",
+        "public/**"
+      ]
+    }
+  }
+}

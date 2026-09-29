@@ -1,6 +1,5 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { readPersistentFile, writePersistentFile } from "./persistent-files.js";
 import { randomUUID } from "node:crypto";
-import { dirname } from "node:path";
 import {
   normalizeReporterType,
   type ClientRecord,
@@ -9,10 +8,13 @@ import {
   type ReporterRecord
 } from "./domain.js";
 import { normalizeCanonicalRecord } from "./coverage-resolvers.js";
+import { deriveMostRecentArticles, isReporterCurrent } from "./reporter-recency.js";
+import { hasReporterId, mergeSheetOwnedReporter, reporterIdentityKey } from "./reporter-fields.js";
 
 interface StoreData {
   clients: ClientRecord[];
   reporters: ReporterRecord[];
+  archivedReporters: ReporterRecord[];
   coverage: CoverageRecord[];
   clientContacts: ContactRecord[];
   teamContacts: ContactRecord[];
@@ -21,6 +23,7 @@ interface StoreData {
 const emptyStore: StoreData = {
   clients: [],
   reporters: [],
+  archivedReporters: [],
   coverage: [],
   clientContacts: [],
   teamContacts: []
@@ -95,19 +98,22 @@ export class StructuredStore {
 
   constructor(private readonly filePath: string) {}
 
-  async load(): Promise<void> {
+  async load(options: { readOnly?: boolean } = {}): Promise<void> {
+    const readOnly = options.readOnly ?? false;
     try {
       this.data = JSON.parse(
-        await readFile(this.filePath, "utf8")
+        await readPersistentFile(this.filePath, "utf8")
       ) as StoreData;
       const originalCoverage = JSON.stringify(this.data.coverage ?? []);
 
       this.data.reporters = (this.data.reporters ?? []).map((reporter) => ({
         ...reporter,
-        reporterType: normalizeReporterType(reporter.reporterType),
+        reporterType: reporter.reporterType === "" ? "" : normalizeReporterType(reporter.reporterType),
         notes: reporter.notes ?? "",
-        beats: reporter.beats ?? ""
+        beats: reporter.beats ?? "",
+        mostRecentArticle: reporter.mostRecentArticle ?? ""
       }));
+      this.data.archivedReporters = (this.data.archivedReporters ?? []).map((reporter) => ({ ...reporter, mostRecentArticle: reporter.mostRecentArticle ?? "" }));
       this.data.clients = this.data.clients ?? [];
       this.data.coverage = (this.data.coverage ?? []).map((record) => {
         const normalizedRecord = normalizeCanonicalRecord({
@@ -149,10 +155,16 @@ export class StructuredStore {
       console.log(
         `[STORE] Loaded ${this.data.coverage.length} coverage records, ${this.data.reporters.length} reporters, ${this.data.clients.length} clients`
       );
-      if (JSON.stringify(this.data.coverage) !== originalCoverage) {
+      if (!readOnly && JSON.stringify(this.data.coverage) !== originalCoverage) {
         await this.save();
       }
-    } catch {
+    } catch (error) {
+      if (readOnly) {
+        throw new Error(`Unable to read local store in read-only mode: ${error instanceof Error ? error.message : String(error)}`);
+      }
+      if (process.env.VERCEL === "1") {
+        throw new Error(`Persistent data/store.json is missing in Vercel Blob. Seed the existing local state with npm run seed:vercel-state before deploying: ${error instanceof Error ? error.message : String(error)}`);
+      }
       console.log("[STORE] No existing store found. Creating empty store.");
       await this.save();
     }
@@ -163,9 +175,7 @@ export class StructuredStore {
   }
 
   async save(): Promise<void> {
-    await mkdir(dirname(this.filePath), { recursive: true });
-
-    await writeFile(
+    await writePersistentFile(
       this.filePath,
       JSON.stringify(this.data, null, 2)
     );
@@ -265,11 +275,13 @@ export class StructuredStore {
       return undefined;
     }
 
-    const matches = this.data.reporters.filter(
-      (reporter) =>
-        normalize(reporter.firstName) === targetFirst &&
-        normalize(reporter.lastName) === targetLast
-    );
+    const matches = this.data.reporters.filter((reporter) => {
+      const nameMatches = (identity: { firstName: string; lastName: string; outlet: string }) =>
+        normalize(identity.firstName) === targetFirst && normalize(identity.lastName) === targetLast;
+      const outletMatches = (identity: { firstName: string; lastName: string; outlet: string }) =>
+        !outlet || normalizeOutlet(identity.outlet) === normalizeOutlet(outlet);
+      return [reporter, ...(reporter.identityAliases ?? [])].some((identity) => nameMatches(identity) && outletMatches(identity));
+    });
 
     if (matches.length === 0) {
       return undefined;
@@ -280,12 +292,7 @@ export class StructuredStore {
     }
 
     if (outlet) {
-      const targetOutlet = normalizeOutlet(outlet);
-
-      return matches.find(
-        (reporter) =>
-          normalizeOutlet(reporter.outlet) === targetOutlet
-      );
+      return matches[0];
     }
 
     return undefined;
@@ -323,6 +330,18 @@ export class StructuredStore {
       return existing;
     }
 
+    const archivedIndex = this.data.archivedReporters.findIndex((item) =>
+      this.reporterMatchesIdentity(item, reporter.firstName, reporter.lastName, reporter.outlet)
+    );
+    if (archivedIndex >= 0) {
+      const [restored] = this.data.archivedReporters.splice(archivedIndex, 1);
+      // Re-discovery reactivates the same reporter without replacing the
+      // human-maintained values retained in the archive.
+      const current = { ...reporter, ...restored, id: restored.id };
+      this.data.reporters.push(current);
+      return current;
+    }
+
     const created: ReporterRecord = {
       ...reporter,
       id: `REP-${String(this.nextReporterNumber()).padStart(
@@ -339,7 +358,7 @@ export class StructuredStore {
   private nextReporterNumber(): number {
     let highest = 0;
 
-    for (const reporter of this.data.reporters) {
+    for (const reporter of [...this.data.reporters, ...this.data.archivedReporters]) {
       const match = reporter.id.match(/^REP-(\d+)$/);
 
       if (match) {
@@ -354,26 +373,29 @@ export class StructuredStore {
   }
 
   upsertReporter(reporter: ReporterRecord): void {
-    const index = this.data.reporters.findIndex(
-      (item) => item.id === reporter.id
-    );
+    const hasId = hasReporterId(reporter.id);
+    const index = hasId
+      ? this.data.reporters.findIndex((item) => item.id === reporter.id)
+      : this.data.reporters.findIndex((item) => this.reporterMatchesIdentity(item, reporter.firstName, reporter.lastName, reporter.outlet));
 
     if (index >= 0) {
-      this.data.reporters[index] = reporter;
+      this.data.reporters[index] = mergeSheetOwnedReporter(this.data.reporters[index]!, reporter);
       return;
     }
 
-    const existing = this.findReporterByIdentity(
-      reporter.firstName,
-      reporter.lastName,
-      reporter.outlet
-    );
-
-    if (existing) {
+    const archivedIndex = hasId
+      ? this.data.archivedReporters.findIndex((item) => item.id === reporter.id)
+      : this.data.archivedReporters.findIndex((item) => this.reporterMatchesIdentity(item, reporter.firstName, reporter.lastName, reporter.outlet));
+    if (archivedIndex >= 0) {
+      const archived = this.data.archivedReporters[archivedIndex]!;
+      this.data.archivedReporters[archivedIndex] = mergeSheetOwnedReporter(archived, reporter);
       return;
     }
 
-    this.data.reporters.push(reporter);
+    const id = hasId ? reporter.id.trim() : `REP-${String(this.nextReporterNumber()).padStart(6, "0")}`;
+    const created = { ...reporter, id };
+    const derived = deriveMostRecentArticles([created], this.data.coverage)[0]!;
+    this.data.reporters.push(derived);
   }
 
   updateReporter(reporter: ReporterRecord): void {
@@ -384,6 +406,30 @@ export class StructuredStore {
     if (index >= 0) {
       this.data.reporters[index] = reporter;
     }
+  }
+
+  updateArchivedReporter(reporter: ReporterRecord): void {
+    const index = this.data.archivedReporters.findIndex((item) => item.id === reporter.id);
+    if (index >= 0) this.data.archivedReporters[index] = reporter;
+  }
+
+  /** Recalculate dates from history, archive expired current identities, and return the current list. */
+  async prepareCurrentReporters(asOf = new Date()): Promise<ReporterRecord[]> {
+    const recalculated = deriveMostRecentArticles(this.data.reporters, this.data.coverage);
+    const current: ReporterRecord[] = [];
+    for (const reporter of recalculated) {
+      if (isReporterCurrent(reporter, asOf)) current.push(reporter);
+      else this.data.archivedReporters.push(reporter);
+    }
+    const expiredIds = new Set(recalculated.filter((reporter) => !isReporterCurrent(reporter, asOf)).map((reporter) => reporter.id));
+    this.data.reporters = current;
+    if (expiredIds.size) await this.save();
+    return structuredClone(current);
+  }
+
+  private reporterMatchesIdentity(reporter: ReporterRecord, firstName: string, lastName: string, outlet: string): boolean {
+    const target = reporterIdentityKey({ firstName, lastName, outlet });
+    return [reporter, ...(reporter.identityAliases ?? [])].some((identity) => reporterIdentityKey(identity) === target);
   }
 
   // ============================================================

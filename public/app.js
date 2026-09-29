@@ -1,3 +1,36 @@
+import { buildMediaListRows, buildReporterCoverageIndex, filterReporters, formatReporterSearchSummary, MEDIA_LIST_HEADERS, qualificationDiagnostics, sanitizeMediaList, uniqueMasterReporters } from "/reporter-filter.js";
+import { addAllowedSelection, availableSelections, CANONICAL_REPORTER_TYPES, removeSelection } from "/filter-selection.js";
+
+const nativeFetch = window.fetch.bind(window);
+let appLoginPromise = null;
+let appLoginDismissed = false;
+window.fetch = async (input, init) => {
+  const response = await nativeFetch(input, init);
+  if (response.status !== 401 || response.headers.get("x-app-auth-required") !== "1") return response;
+  if (appLoginDismissed) return response;
+  if (!appLoginPromise) {
+    appLoginPromise = (async () => {
+      const password = window.prompt("Enter the Media List Builder access password");
+      if (!password) {
+        appLoginDismissed = true;
+        return false;
+      }
+      const login = await nativeFetch("/api/auth/login", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ password })
+      });
+      if (!login.ok) {
+        appLoginDismissed = true;
+        window.alert("The application password was not accepted. Reload the page to try again.");
+        return false;
+      }
+      return true;
+    })().finally(() => { appLoginPromise = null; });
+  }
+  return await appLoginPromise ? nativeFetch(input, init) : response;
+};
+
 const status = document.querySelector("#status");
 const results = document.querySelector("#results");
 
@@ -11,6 +44,209 @@ let enrichmentProposals = [];
 let reportData = null;
 let activeReportTab = "Coverage";
 let reportClient = new URLSearchParams(window.location.search).get("client") || "";
+let directoryReporters = [];
+let filteredReporters = [];
+let mediaList = [];
+let coverageHistory = [];
+let reporterSourceDiagnostics = null;
+let selectedTopics = [];
+let selectedSimilarClients = [];
+let selectedPoolIds = new Set();
+let selectedMediaIds = new Set();
+let activeFilters = {};
+let manualReporterByLabel = new Map();
+let canonicalBeatOptions = [];
+let similarClientOptions = [];
+let selectedReporterTypes = [];
+
+function selectionConfig(kind) {
+  if (kind === "topic") return { values: selectedTopics, set: (values) => { selectedTopics = values; }, options: canonicalBeatOptions, select: "#topic-select", chips: "#topic-selected-chips", placeholder: "Select topic", label: (value) => value };
+  if (kind === "similarClient") return { values: selectedSimilarClients, set: (values) => { selectedSimilarClients = values; }, options: similarClientOptions, select: "#similar-client-select", chips: "#similar-client-selected-chips", placeholder: "Select similar client", label: (value) => value };
+  return { values: selectedReporterTypes, set: (values) => { selectedReporterTypes = values; }, options: CANONICAL_REPORTER_TYPES.map((type) => type.value), select: "#reporter-type-select", chips: "#reporter-type-selected-chips", placeholder: "Select reporter type", label: (value) => CANONICAL_REPORTER_TYPES.find((type) => type.value === value)?.label ?? value };
+}
+
+function renderSelectionBuilder(kind) {
+  const config = selectionConfig(kind);
+  document.querySelector(config.chips).innerHTML = config.values.map((value) => `<span class="filter-chip">${escapeHtml(config.label(value))}<button type="button" data-remove-selection="${kind}" data-selection-value="${escapeAttribute(value)}" aria-label="Remove ${escapeAttribute(config.label(value))}">×</button></span>`).join("");
+  const available = availableSelections(config.options, config.values);
+  document.querySelector(config.select).innerHTML = `<option value="">${escapeHtml(config.placeholder)}${available.length ? " ▾" : ""}</option>${available.map((value) => `<option value="${escapeAttribute(value)}">${escapeHtml(config.label(value))}</option>`).join("")}`;
+  document.querySelector(config.select).disabled = available.length === 0;
+}
+
+function personName(person) { return `${person.firstName || ""} ${person.lastName || ""}`.trim(); }
+function escapeAttribute(value) { return escapeHtml(value); }
+function normalizedType(value) {
+  return String(value ?? "").toLocaleLowerCase().trim().replace(/\s+/g, " ");
+}
+function compactReporterType(value) {
+  const types = { reporter: "Reporter", influencer: "Influencer", podcast: "Podcast", "broadcast tv": "Broadcast TV", "tier 1 media": "Tier 1 Media" };
+  const key = normalizedType(value);
+  return types[key] || String(value || "—");
+}
+function evidenceLabel(reason) {
+  const value = String(reason ?? "");
+  if (/^Insurance: Master Directory Beats|^Insurance: Beats/i.test(value)) return "INSURANCE: BEATS";
+  if (/^Insurance: historical coverage/i.test(value)) return "INSURANCE: COVERAGE";
+  if (/^Insurance: Outlet evidence/i.test(value)) return "INSURANCE OUTLET";
+  const similar = value.match(/^Similar client:\s*([^(:]+)/i);
+  if (similar) return `SIMILAR CLIENT: ${similar[1].trim().toLocaleUpperCase()}`;
+  const pitch = value.match(/^Pitch client:\s*([^(:]+)/i);
+  if (pitch) return `PITCH CLIENT: ${pitch[1].trim().toLocaleUpperCase()}`;
+  return value.toLocaleUpperCase();
+}
+function renderPool() {
+  document.querySelector("#pool-count").textContent = `${filteredReporters.length} relevant reporters`;
+  document.querySelector("#search-summary").textContent = formatReporterSearchSummary(directoryReporters.length, activeFilters, filteredReporters.length);
+  const headers = ["Select", "Outlet", "Reporter", "Reporter Type", "Email", "Clients Covered", "Beats", "Most Recent Article"];
+  const rows = filteredReporters.map((person) => {
+    const reasons = person.whyRelevant || [];
+    const topics = reasons.filter((reason) => !reason.startsWith("Similar client:") && !reason.startsWith("No relevance"));
+    const similar = reasons.filter((reason) => reason.startsWith("Similar client:"));
+    const recent = reasons.filter((reason) => reason.includes("historical coverage"));
+    const recentEvidence = [person.mostRecentArticle, ...recent].filter(Boolean).join("; ");
+    const evidenceLabels = reasons.map((reason) => `<span class="evidence-label">${escapeHtml(evidenceLabel(reason))}</span>`).join("");
+    return `<tr><td><input type="checkbox" data-pool-select="${escapeAttribute(person.id)}" aria-label="Select ${escapeAttribute(personName(person))}" ${selectedPoolIds.has(person.id) ? "checked" : ""}></td><td>${escapeHtml(person.outlet)}</td><td><div class="reporter-result"><details class="evidence-detail"><summary>${escapeHtml(personName(person)) || "Unknown reporter"}</summary><div class="evidence-content"><strong>Why Relevant</strong><ul>${reasons.map((reason) => `<li>${escapeHtml(reason)}</li>`).join("") || "<li>Matches current filters</li>"}</ul><strong>Topic evidence</strong><p>${escapeHtml(topics.join("; ") || "—")}</p><strong>Similar-client evidence</strong><p>${escapeHtml(similar.join("; ") || "—")}</p><strong>Beats</strong><p>${escapeHtml(person.beats || "—")}</p><strong>Notes</strong><p>${escapeHtml(person.notes || "—")}</p><strong>Recent historical coverage</strong><p>${escapeHtml(recentEvidence || "—")}</p></div></details><div class="evidence-labels" aria-label="Qualification evidence">${evidenceLabels}</div></div></td><td>${escapeHtml(compactReporterType(person.reporterType))}</td><td>${escapeHtml(person.email)}</td><td>${escapeHtml(person.clientsCovered)}</td><td>${escapeHtml(person.beats)}</td><td>${escapeHtml(person.mostRecentArticle)}</td></tr>`;
+  }).join("");
+  document.querySelector("#reporter-pool").innerHTML = rows ? `<table class="dense-table reporter-table"><thead><tr>${headers.map((header) => `<th>${escapeHtml(header)}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table>` : `<p class="empty-state">No reporters match these filters.</p>`;
+  renderMediaList();
+}
+function renderMediaList() {
+  mediaList = sanitizeMediaList(mediaList, directoryReporters);
+  selectedMediaIds = new Set([...selectedMediaIds].filter((id) => mediaList.some((person) => String(person.id) === id)));
+  document.querySelector("#media-list-count").textContent = `${mediaList.length} reporters`;
+  const fields = ["ownerDatePitched", "outlet", "firstName", "lastName", "email", "reporterType", "clientsCovered", "profile", "notes"];
+  const headers = ["Select", "Owner/Date Pitched", "Outlet", "Reporter First Name", "Reporter Last Name", "Email", "Reporter Type", "Clients Covered", "Profile", "Notes", "Action"];
+  const rows = mediaList.map((person) => `<tr><td><input type="checkbox" data-media-select="${escapeAttribute(person.id)}" aria-label="Select ${escapeAttribute(personName(person))}" ${selectedMediaIds.has(String(person.id)) ? "checked" : ""}></td>${fields.map((field) => `<td>${["profile", "notes"].includes(field) ? `<textarea data-media-id="${escapeAttribute(person.id)}" data-media-field="${field}" aria-label="${field}" ${field === "notes" ? "readonly" : ""}>${escapeHtml(person[field] ?? "")}</textarea>` : `<input data-media-id="${escapeAttribute(person.id)}" data-media-field="${field}" aria-label="${field}" value="${escapeAttribute(person[field] ?? "")}" ${["outlet", "firstName", "lastName", "email", "reporterType", "clientsCovered"].includes(field) ? "readonly" : ""}>`}</td>`).join("")}<td><button type="button" data-remove-media="${escapeAttribute(person.id)}">Remove</button></td></tr>`).join("");
+  document.querySelector("#media-list").innerHTML = rows ? `<table class="dense-table editable-table media-table"><thead><tr>${headers.map((header) => `<th>${escapeHtml(header)}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table>` : `<p class="empty-state">Add reporters from the filtered pool to start your media list.</p>`;
+}
+function buildProfile(person) {
+  return person.profile || person.whyRelevant?.[0] || (person.beats ? `Covers ${person.beats}` : person.mostRecentArticle || "");
+}
+async function loadReporterDirectory() {
+  let reporterSourceLoaded = false;
+  try {
+    const directory = await readResponse(await fetch("/api/reference-data", { cache: "no-store" }));
+    const rawReporterRows = directory.reporters || [];
+    reporterSourceDiagnostics = directory.reporterSource || null;
+    directoryReporters = uniqueMasterReporters(rawReporterRows);
+    reporterSourceLoaded = true;
+    const source = reporterSourceDiagnostics;
+    const sourceSummary = document.querySelector("#reporter-source-summary");
+    sourceSummary.classList.add("source-diagnostics");
+    sourceSummary.innerHTML = source
+      ? `<div class="source-title"><div><span class="source-eyebrow">Master Directory</span><strong>${escapeHtml(source.kind === "google" ? "Google · Master Directory (Cleaned)" : "Local fallback")}</strong></div><span class="source-authority ${source.authoritative ? "is-authoritative" : "is-fallback"}">${source.authoritative ? "Authoritative" : "Non-authoritative"}</span></div><div class="source-counts"><div><span>Raw rows</span><strong>${Number(source.rawReporterRowCount) || 0}</strong></div><div><span>Valid</span><strong>${Number(source.validReporterCount) || 0}</strong></div><div><span>Unique</span><strong>${Number(source.uniqueValidReporterCount) || 0}</strong></div></div>`
+      : "Reporter source metadata unavailable";
+    const history = await readResponse(await fetch("/api/coverage-data", { cache: "no-store" }));
+    coverageHistory = history.coverage || [];
+    const { diagnostics } = buildReporterCoverageIndex(directory.reporters || [], coverageHistory);
+    console.info("[Media List Builder] Reporter identity pipeline", { ...diagnostics, reporterSource: source, filteredReporters: directoryReporters.length });
+    filteredReporters = filterReporters(directoryReporters, {}, coverageHistory).sort((a, b) => String(a.outlet).localeCompare(String(b.outlet)) || personName(a).localeCompare(personName(b)));
+    renderPool();
+  } catch (error) {
+    document.querySelector("#pool-count").textContent = error.message || "Reporter directory unavailable";
+    document.querySelector("#reporter-source-summary").textContent = reporterSourceLoaded
+      ? "Reporter directory source loaded; Coverage history could not be loaded."
+      : "Unable to load the authoritative reporter source; no fallback was used.";
+  }
+}
+document.querySelector("#pitch-filter-form").addEventListener("submit", (event) => {
+  event.preventDefault();
+  const formData = new FormData(event.currentTarget);
+  const filters = {
+    topics: selectedTopics,
+    similarClients: selectedSimilarClients,
+    client: document.querySelector('#pitch-filter-form [name="client"]').value.trim(),
+    reporterTypes: [...selectedReporterTypes],
+    status: String(formData.get("status") || "all")
+  };
+  activeFilters = filters;
+  selectedPoolIds.clear();
+  filteredReporters = filterReporters(directoryReporters, filters, coverageHistory).sort((a, b) => String(a.outlet).localeCompare(String(b.outlet)) || personName(a).localeCompare(personName(b)));
+  const pipeline = buildReporterCoverageIndex(directoryReporters, coverageHistory).diagnostics;
+  const qualification = qualificationDiagnostics(filteredReporters);
+  console.info("[Media List Builder] Reporter filter results", { ...pipeline, qualification, activeFilters: { topics: filters.topics, similarClients: filters.similarClients, reporterTypes: filters.reporterTypes, status: filters.status }, filteredReporters: filteredReporters.length });
+  renderPool();
+});
+document.querySelector("#pitch-filter-form").addEventListener("change", (event) => {
+  const select = event.target.closest("#topic-select, #similar-client-select, #reporter-type-select");
+  if (!select || !select.value) return;
+  const kind = select.id === "topic-select" ? "topic" : select.id === "similar-client-select" ? "similarClient" : "reporterType";
+  const config = selectionConfig(kind);
+  config.set(addAllowedSelection(config.options, config.values, select.value));
+  renderSelectionBuilder(kind);
+});
+document.querySelector("#pitch-filter-form").addEventListener("click", (event) => {
+  const button = event.target.closest("[data-remove-selection]");
+  if (!button) return;
+  const config = selectionConfig(button.dataset.removeSelection);
+  config.set(removeSelection(config.values, button.dataset.selectionValue));
+  renderSelectionBuilder(button.dataset.removeSelection);
+});
+document.querySelector("#reporter-pool").addEventListener("change", (event) => {
+  const checkbox = event.target.closest("[data-pool-select]");
+  if (!checkbox) return;
+  if (checkbox.checked) selectedPoolIds.add(checkbox.dataset.poolSelect); else selectedPoolIds.delete(checkbox.dataset.poolSelect);
+});
+document.querySelector("#select-all-pool").addEventListener("click", () => { selectedPoolIds = new Set(filteredReporters.map((person) => person.id)); renderPool(); });
+document.querySelector("#deselect-all-pool").addEventListener("click", () => { selectedPoolIds.clear(); renderPool(); });
+document.querySelector("#add-selected-pool").addEventListener("click", () => {
+  mediaList = sanitizeMediaList(mediaList, directoryReporters);
+  const existing = new Set(mediaList.map((person) => String(person.id)));
+  const masters = new Map(directoryReporters.map((person) => [String(person.id), person]));
+  for (const person of filteredReporters) {
+    const id = String(person.id);
+    const master = masters.get(id);
+    if (selectedPoolIds.has(id) && master && !existing.has(id)) {
+      mediaList.push({ ...master, reporterType: compactReporterType(master.reporterType), ownerDatePitched: "", profile: buildProfile(person) });
+      existing.add(id);
+    }
+  }
+  selectedPoolIds.clear();
+  renderPool();
+});
+document.querySelector("#media-list").addEventListener("input", (event) => {
+  const input = event.target.closest("[data-media-id]");
+  const person = mediaList.find((item) => item.id === input?.dataset.mediaId);
+  if (person && input) person[input.dataset.mediaField] = input.value;
+});
+document.querySelector("#media-list").addEventListener("change", (event) => {
+  const checkbox = event.target.closest("[data-media-select]");
+  if (!checkbox) return;
+  const id = String(checkbox.dataset.mediaSelect);
+  if (checkbox.checked) selectedMediaIds.add(id); else selectedMediaIds.delete(id);
+});
+document.querySelector("#media-list").addEventListener("click", (event) => {
+  const remove = event.target.closest("[data-remove-media]");
+  if (remove) { mediaList = mediaList.filter((person) => String(person.id) !== remove.dataset.removeMedia); selectedMediaIds.delete(remove.dataset.removeMedia); renderMediaList(); }
+});
+document.querySelector("#remove-selected-media").addEventListener("click", () => {
+  mediaList = mediaList.filter((person) => !selectedMediaIds.has(String(person.id)));
+  selectedMediaIds.clear();
+  renderMediaList();
+});
+document.querySelector("#clear-media-list").addEventListener("click", () => {
+  mediaList = [];
+  selectedMediaIds.clear();
+  renderMediaList();
+});
+document.querySelector("#create-media-sheet").addEventListener("click", async (event) => {
+  const button = event.currentTarget, statusNode = document.querySelector("#media-sheet-status");
+  const client = document.querySelector('#pitch-filter-form [name="client"]').value.trim();
+  if (!client) { statusNode.textContent = "Enter the client this media list is for"; return; }
+  mediaList = sanitizeMediaList(mediaList, directoryReporters);
+  if (!mediaList.length) { statusNode.textContent = "No valid Master Directory reporters are in the media list"; return; }
+  button.disabled = true; statusNode.textContent = "Creating a new Google Sheet…";
+  const headers = MEDIA_LIST_HEADERS;
+  const rows = buildMediaListRows(mediaList, directoryReporters);
+  const date = new Date();
+  const dateStamp = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  try {
+    const result = await readResponse(await fetch("/api/media-list/google/sheets", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: `Media List - ${client} - ${dateStamp}`, headers, rows }) }));
+    statusNode.innerHTML = `Google Sheet created: <a href="${escapeAttribute(result.spreadsheetUrl)}" target="_blank" rel="noreferrer">${escapeHtml(result.title)}</a>`;
+  } catch (error) { statusNode.textContent = error instanceof Error ? error.message : "Unable to create Google Sheet"; }
+  finally { button.disabled = false; }
+});
+loadReporterDirectory();
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -91,7 +327,30 @@ async function loadReferenceSelects() {
   try {
     const data = await readResponse(await fetch("/api/reference-data", { cache: "no-store" }));
     document.querySelector('select[name="outlet"]').innerHTML = `<option value="">Select outlet</option>${data.outlets.map((item) => `<option value="${escapeHtml(item.name)}">${escapeHtml(item.name)}${item.uvm === null ? "" : ` (${item.uvm})`}</option>`).join("")}`;
-    document.querySelector('select[name="reporterId"]').innerHTML = `<option value="">Select reporter</option>${data.reporters.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(`${item.firstName} ${item.lastName} - ${item.outlet}`)}</option>`).join("")}`;
+    const validReporters = uniqueMasterReporters(data.reporters || []);
+    const clientNames = Array.isArray(data.clients)
+      ? data.clients
+      : [...new Set(validReporters.flatMap((reporter) => String(reporter.clientsCovered ?? "").split(/[,;|]/).map((name) => name.trim()).filter(Boolean)))];
+    const sortedClients = [...new Set(clientNames.map((name) => String(name).trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+    const clientOptions = sortedClients.map((name) => `<option value="${escapeAttribute(name)}">${escapeHtml(name)}</option>`).join("");
+    document.querySelector('select[name="client"]').innerHTML = `<option value="">Select pitch client</option>${clientOptions}`;
+    document.querySelector('select[name="client"]').disabled = sortedClients.length === 0;
+    similarClientOptions = sortedClients;
+    canonicalBeatOptions = Array.isArray(data.canonicalBeats) ? data.canonicalBeats : [];
+    renderSelectionBuilder("topic");
+    renderSelectionBuilder("similarClient");
+    renderSelectionBuilder("reporterType");
+    if (!canonicalBeatOptions.length) console.error("[Media List Builder] Canonical Beats were not provided by reference data; topic selection is disabled.");
+    const canonicalTypeValues = new Set(CANONICAL_REPORTER_TYPES.map(({ value }) => value));
+    const unexpectedTypes = [...new Set(validReporters.map((reporter) => String(reporter.reporterType ?? "").trim()).filter((value) => value && !canonicalTypeValues.has(value.toLocaleLowerCase().replace(/[_-]+/g, " ").replace(/\s+/g, " "))))].sort((a, b) => a.localeCompare(b));
+    if (unexpectedTypes.length) {
+      const review = document.querySelector("#reporter-type-review");
+      review.hidden = false;
+      review.textContent = `Master Directory Reporter Type values for review: ${unexpectedTypes.join(", ")}`;
+      console.warn("[Media List Builder] Unexpected Master Directory Reporter Type values", unexpectedTypes);
+    }
+    manualReporterByLabel = new Map(validReporters.map((item) => [`${personName(item)} — ${item.outlet} [${item.id}]`, item]));
+    document.querySelector("#manual-reporter-options").innerHTML = [...manualReporterByLabel.keys()].map((label) => `<option value="${escapeAttribute(label)}"></option>`).join("");
   } catch (error) {
     document.querySelector("#manual-coverage-status").textContent = error instanceof Error ? error.message : "Master sources unavailable";
   }
@@ -278,7 +537,7 @@ document
 
     if (
       !confirm(
-        "Populate the global Master Reporter List from local records? This will write reporter rows only."
+        "Stage local reporter records in Sheet1? Gemini-curated rows in Master Directory (Cleaned) will not be added or overwritten by this action."
       )
     ) {
       return;
@@ -290,7 +549,7 @@ document
     );
 
     button.disabled = true;
-    output.textContent = "Populating...";
+    output.textContent = "Staging reporters in Sheet1...";
 
     try {
 
@@ -762,7 +1021,7 @@ document
 
     if (
       !confirm(
-        "Apply approved reporter changes to the existing Master Reporter List?"
+        "Apply approved reporter changes to Master Directory (Cleaned)?"
       )
     ) {
       return;
@@ -1058,8 +1317,13 @@ ingestForm.addEventListener(
           )
           .join("");
 
+      const reviewRequired = data.reviewRequired ?? [];
+      const reviewReasons = [...new Set(reviewRequired)];
+      const reviewSummary = reviewRequired.length
+        ? `; ${reviewRequired.length} records require review${reviewReasons.length === 1 ? `: ${reviewReasons[0]}` : ` (${reviewReasons.length} issue types; first: ${reviewReasons[0]})`}`
+        : "";
       ingestStatus.textContent =
-        `Done: ${data.coverageAdded ?? 0} coverage added, ${data.coverageDuplicates ?? 0} duplicates, ${data.reportersDiscovered ?? 0} reporters discovered (${data.reportersAdded ?? 0} added, ${data.reportersSkipped ?? 0} skipped)`;
+        `Done: ${data.coverageAdded ?? 0} coverage added, ${data.coverageDuplicates ?? 0} duplicates, ${data.reportersDiscovered ?? 0} reporters discovered (${data.reportersAdded ?? 0} added, ${data.reportersSkipped ?? 0} skipped)${reviewSummary}`;
       refreshReport();
 
     } catch (error) {
@@ -1088,6 +1352,24 @@ document.querySelector("#report-tabs").addEventListener("click", (event) => {
   if (!button) return;
   activeReportTab = button.dataset.reportTab;
   renderActiveReport();
+});
+document.querySelector("#app-navigation").addEventListener("click", (event) => {
+  const button = event.target.closest("[data-app-view]");
+  if (!button) return;
+  const selectedView = button.dataset.appView;
+  document.querySelectorAll("[data-app-view]").forEach((tab) => {
+    const selected = tab === button;
+    tab.classList.toggle("active", selected);
+    tab.setAttribute("aria-selected", String(selected));
+  });
+  document.querySelectorAll("[data-view-panel]").forEach((panel) => {
+    panel.hidden = panel.dataset.viewPanel !== selectedView;
+  });
+  if (selectedView === "coverage") refreshReport();
+});
+document.querySelector("#manual-reporter-search").addEventListener("input", (event) => {
+  const reporter = manualReporterByLabel.get(event.currentTarget.value);
+  document.querySelector('#manual-coverage-form [name="reporterId"]').value = reporter?.id ?? "";
 });
 
 document.querySelector("#manual-coverage-button").addEventListener("click", async () => {
