@@ -1346,13 +1346,6 @@ ingestForm.addEventListener(
   }
 );
 
-document.querySelector("#refresh-report-button").addEventListener("click", refreshReport);
-document.querySelector("#report-tabs").addEventListener("click", (event) => {
-  const button = event.target.closest("[data-report-tab]");
-  if (!button) return;
-  activeReportTab = button.dataset.reportTab;
-  renderActiveReport();
-});
 document.querySelector("#app-navigation").addEventListener("click", (event) => {
   const button = event.target.closest("[data-app-view]");
   if (!button) return;
@@ -1365,7 +1358,6 @@ document.querySelector("#app-navigation").addEventListener("click", (event) => {
   document.querySelectorAll("[data-view-panel]").forEach((panel) => {
     panel.hidden = panel.dataset.viewPanel !== selectedView;
   });
-  if (selectedView === "coverage") refreshReport();
 });
 document.querySelector("#manual-reporter-search").addEventListener("input", (event) => {
   const reporter = manualReporterByLabel.get(event.currentTarget.value);
@@ -1390,51 +1382,12 @@ document.querySelector("#manual-coverage-button").addEventListener("click", asyn
   }
 });
 
-document.querySelector("#report-content").addEventListener("submit", async (event) => {
-  const form = event.target.closest("[data-contact-kind]");
-  if (!form) return;
-  event.preventDefault();
-  const kind = form.dataset.contactKind;
-  try {
-    await readResponse(await fetch(`/api/contacts/${kind}?client=${encodeURIComponent(reportClient)}`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(Object.fromEntries(new FormData(form)))
-    }));
-    await refreshReport();
-  } catch (error) {
-    document.querySelector("#report-status").textContent = error instanceof Error ? error.message : "Contact save failed";
-  }
-});
-
-document.querySelector("#report-content").addEventListener("click", async (event) => {
-  const button = event.target.closest("[data-contact-delete], [data-contact-edit]");
-  if (!button) return;
-  const kind = activeReportTab === "Client Contact" ? "client" : "team";
-  const id = button.dataset.contactDelete ?? button.dataset.contactEdit;
-  const contacts = kind === "client" ? reportData.clientContacts : reportData.teamContacts;
-  const contact = contacts.find((item) => item.id === id);
-  if (button.dataset.contactEdit) {
-    const form = document.querySelector("[data-contact-kind]");
-    ["name", "title", "email", "phone", "notes"].forEach((field) => { form.elements[field].value = contact?.[field] ?? ""; });
-    form.elements.id.value = contact?.id ?? "";
-    return;
-  }
-  if (confirm("Delete this contact?")) {
-    await fetch(`/api/contacts/${kind}/${encodeURIComponent(id)}?client=${encodeURIComponent(reportClient)}`, { method: "DELETE" });
-    await refreshReport();
-  }
-});
-
-
 /* ============================================================
    INITIALIZE
    ============================================================ */
 
 refreshStatus();
 loadReferenceSelects();
-refreshReport();
-
 console.log(
   "[PRCC] app.js loaded successfully"
 );

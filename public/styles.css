@@ -212,6 +212,11 @@ tbody tr:hover { background: rgba(57, 66, 72, .18); }
 .empty-state { color: var(--sc-muted); font-size: 13px; padding: 25px; }
 
 /* Coverage Report */
+.streetcred-ai-panel { align-items: flex-start; display: flex; flex-direction: column; gap: 14px; min-height: 320px; justify-content: center; }
+.streetcred-ai-panel .eyebrow { color: var(--sc-accent); }
+.streetcred-ai-panel h2 { font-size: clamp(2.5rem, 5vw, 4rem); }
+.streetcred-ai-panel > p:not(.eyebrow) { color: var(--sc-muted); font-size: 16px; margin: 0 0 8px; }
+.streetcred-ai-panel .btn { display: inline-flex; text-decoration: none; }
 .results-header { align-items: start; border-bottom: 1px solid var(--sc-line); display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; padding-bottom: 17px; }
 .results-header .eyebrow, .results-header .kicker { color: var(--sc-accent); }
 .results-header h2 { font-size: clamp(2.25rem, 4vw, 3.3rem); }
