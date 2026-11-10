@@ -2,6 +2,7 @@ import { google, drive_v3, sheets_v4 } from "googleapis";
 import type { Credentials } from "google-auth-library";
 import type {
   CoverageRecord,
+  CoverageDestination,
   EnrichmentProposal,
   OutletRecord,
   ReporterRecord
@@ -175,13 +176,35 @@ interface ReporterOutletSnapshot {
 }
 
 export class GoogleWorkspace {
+  /** Resolve the actual Drive location using the connected account, never a guessed folder. */
+  async describeCoverageDestination(spreadsheetId:string):Promise<CoverageDestination> {
+    const result=await this.drive.files.get({fileId:spreadsheetId,fields:'id,name,mimeType,trashed,webViewLink,parents,appProperties,capabilities(canEdit)',supportsAllDrives:true});
+    const file=result.data;
+    if(file.trashed || file.mimeType!=='application/vnd.google-apps.spreadsheet') throw Object.assign(new Error('Coverage spreadsheet is missing, deleted or not a spreadsheet'),{code:404});
+    const parents=[];
+    for(const id of file.parents??[]) {
+      const parent=await this.drive.files.get({fileId:id,fields:'id,name,webViewLink',supportsAllDrives:true});
+      parents.push({id,name:parent.data.name??id,url:parent.data.webViewLink??`https://drive.google.com/drive/folders/${id}`});
+    }
+    return {spreadsheetId,spreadsheetName:file.name??spreadsheetId,spreadsheetUrl:file.webViewLink??`https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit`,parents,verifiedRecords:0,verifiedAt:'',writtenBatches:0,managed:!!file.appProperties?.coverageRebuild};
+  }
+  private async validateCoverageFolder() {
+    try {
+      const result=await this.drive.files.get({fileId:this.rootFolderId,fields:'id,name,mimeType,trashed,capabilities(canAddChildren)',supportsAllDrives:true});
+      if(result.data.trashed || result.data.mimeType!=='application/vnd.google-apps.folder' || result.data.capabilities?.canAddChildren!==true) throw Object.assign(new Error('The configured Google Drive folder is not a writable folder'),{code:403});
+    } catch(error:any) {
+      throw Object.assign(new Error(`Configured Google Drive folder is invalid or inaccessible: ${error.message}`),{code:error.response?.status||error.code||400});
+    }
+  }
   /** Writes only the dedicated clean-rebuild destination; never reads legacy coverage. */
   async syncCleanCoverage(client: string, records: import('./domain.js').CoverageRecord[], destination: string | undefined, persist: (id: string) => Promise<void>, generation: string, approvedTab?: string) {
     if (!this.connected) throw new Error('Google is not connected; local import is saved');
+    await this.validateCoverageFolder();
+    let createdHere=false;
     let dedicated=!destination;
     if(destination) {
       try {
-        const file=await this.drive.files.get({fileId:destination,fields:'id,name,mimeType,trashed,capabilities(canEdit)'});
+        const file=await this.drive.files.get({fileId:destination,fields:'id,name,mimeType,trashed,capabilities(canEdit)',supportsAllDrives:true});
         if(/master.*(reporter|outlet)|(reporter|outlet).*master/i.test(file.data.name??'')) throw Object.assign(new Error('Master reporter/outlet spreadsheets cannot be coverage destinations'),{code:400});
         if(file.data.trashed || file.data.mimeType!=='application/vnd.google-apps.spreadsheet') {destination=undefined;dedicated=true;}
         else if(file.data.capabilities?.canEdit===false) throw new Error('Approved coverage spreadsheet is not writable');
@@ -194,14 +217,18 @@ export class GoogleWorkspace {
       // Stable app property recovers a create whose response was lost without duplicating a sheet.
       const marker = `coverage-v2:${generation}:${client.toLowerCase().replace(/[^a-z0-9]/g,'')}`;
       const escaped = marker.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-      const found = await this.drive.files.list({q:`trashed = false and appProperties has { key='coverageRebuild' and value='${escaped}' }`,fields:'files(id)'});
+      const found = await this.drive.files.list({q:`trashed = false and appProperties has { key='coverageRebuild' and value='${escaped}' }`,fields:'files(id)',includeItemsFromAllDrives:true,supportsAllDrives:true});
       destination = found.data.files?.[0]?.id ?? undefined;
       if (!destination) {
-        const created = await this.drive.files.create({requestBody:{name:`${client} - Clean Coverage`,mimeType:'application/vnd.google-apps.spreadsheet',parents:[this.rootFolderId],appProperties:{coverageRebuild:marker}},fields:'id'});
+        const created = await this.drive.files.create({requestBody:{name:`${client} - Clean Coverage`,mimeType:'application/vnd.google-apps.spreadsheet',parents:[this.rootFolderId],appProperties:{coverageRebuild:marker}},fields:'id',supportsAllDrives:true});
         destination = created.data.id!;
+        if(!destination) throw new Error('Google Drive did not return the created coverage spreadsheet ID');
+        createdHere=true;
       }
     }
     await persist(destination!);
+    const delivery=await this.describeCoverageDestination(destination!);
+    if((createdHere||delivery.managed) && !delivery.parents.some(parent=>parent.id===this.rootFolderId)) throw new Error('Google Drive coverage spreadsheet is outside the configured folder; no coverage was written');
     const rows: (string|number)[][] = [['Date','Title','Client','Media Outlet','Reporter','Spokespersons ID','Coverage Type','Sentiment','Status','Reach','URL'], ...records.map(r=>[r.publicationDate,r.articleTitle,r.clientName,r.outlet,r.reporterName,r.spokesperson,r.originalPressType||r.coverageType,r.sentiment,r.status,r.reach??'',r.articleUrl])];
     const metadata=await this.sheets.spreadsheets.get({spreadsheetId:destination,fields:'sheets(properties(sheetId,title,gridProperties))'});
     const tabs=metadata.data.sheets??[];
@@ -227,11 +254,15 @@ export class GoogleWorkspace {
       const values=rows.slice(start,start+500);
       const range=`${sheetName}!A${start+1}:K${start+values.length}`;
       const previous=await this.sheets.spreadsheets.values.get({spreadsheetId:destination,range,valueRenderOption:'UNFORMATTED_VALUE'});
-      if(JSON.stringify(previous.data.values)!==JSON.stringify(values)) await this.sheets.spreadsheets.values.update({spreadsheetId:destination,range,valueInputOption:'RAW',requestBody:{values}});
+      if(JSON.stringify(previous.data.values)!==JSON.stringify(values)) {
+        await this.sheets.spreadsheets.values.update({spreadsheetId:destination,range,valueInputOption:'RAW',requestBody:{values}});
+        delivery.writtenBatches++;
+      }
       const check=await this.sheets.spreadsheets.values.get({spreadsheetId:destination,range,valueRenderOption:'UNFORMATTED_VALUE'});
       if(JSON.stringify(check.data.values)!==JSON.stringify(values)) throw new Error('Google coverage write verification failed');
       await new Promise(resolve=>setTimeout(resolve,2100));
     }
+    return {...delivery,verifiedRecords:records.length,verifiedAt:new Date().toISOString()};
   }
   private readonly oauth: InstanceType<typeof google.auth.OAuth2>;
   readonly redirectUri: string;

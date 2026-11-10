@@ -92,6 +92,25 @@
       </section>
       <section class="results">
         <h2>Coverage Library</h2>
+        <p>
+          Every client synchronizes automatically. Verified counts below come
+          from Google Sheets read-back.
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Client</th>
+                <th>Google delivery</th>
+                <th>Spreadsheet</th>
+                <th>Drive parent folder</th>
+                <th>Verified records</th>
+                <th>Last verified / error</th>
+              </tr>
+            </thead>
+            <tbody id="destinations"></tbody>
+          </table>
+        </div>
         <div id="filters">
           <input
             id="filter-client"

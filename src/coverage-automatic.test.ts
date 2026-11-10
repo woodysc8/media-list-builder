@@ -83,6 +83,21 @@ const sync = async (
   if (client === "Beta")
     throw Object.assign(new Error("temporary Google failure"), { code: 503 });
   if (!destination) await save("created");
+  return {
+    spreadsheetId: destination || "created",
+    spreadsheetName: `${client} coverage`,
+    spreadsheetUrl: `https://docs.google.com/spreadsheets/d/${destination || "created"}/edit`,
+    parents: [
+      {
+        id: "folder",
+        name: "Configured folder",
+        url: "https://drive.google.com/drive/folders/folder",
+      },
+    ],
+    verifiedRecords: _records.length,
+    verifiedAt: new Date().toISOString(),
+    writtenBatches: 1,
+  };
 };
 let queue = new CoverageWorkflow(directory, () => clients, sync);
 await queue.load();
@@ -102,6 +117,21 @@ assert.ok(
   "Multiple clients in a filename must never be guessed",
 );
 assert.ok(identifyClient("unidentified.csv", clients).error);
+await queue.tick();
+assert.equal(
+  queue.state.deliveries?.conquest.state,
+  "verified",
+  "Existing Conquest coverage backfills without another upload",
+);
+assert.equal(
+  queue.state.deliveries?.conquest.destination?.verifiedRecords,
+  107,
+);
+assert.equal(
+  queue.state.jobs.length,
+  1,
+  "Backfill never creates another upload job",
+);
 await queue.enqueue(csv("https://example.com/acme"), "AC PRCC.csv");
 assert.equal(
   queue.state.paused,
@@ -176,7 +206,7 @@ assert.deepEqual(
 );
 await queue.enqueue(csv("https://example.com/new"), "Conquest PRCC new.csv");
 await queue.tick();
-assert.equal(queue.state.jobs.at(-1)?.sync, "local-only");
+assert.equal(queue.state.jobs.at(-1)?.sync, "verified");
 console.log(
   "Automatic imports, ambiguous clients, approved destinations, failure continuation, retry/restart, terminal status and preservation of 107 Conquest records passed.",
 );

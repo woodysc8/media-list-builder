@@ -6,6 +6,17 @@ export type IngestionSource =
   | "JSON"
   | "Text";
 
+export interface CoverageDestination {
+  spreadsheetId: string;
+  spreadsheetName: string;
+  spreadsheetUrl: string;
+  parents: {id:string;name:string;url:string}[];
+  verifiedRecords: number;
+  verifiedAt: string;
+  writtenBatches: number;
+  managed?: boolean;
+}
+
 export type ReporterType =
   | ""
   | "reporter"

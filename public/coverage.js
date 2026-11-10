@@ -1,4 +1,5 @@
 const $ = (id) => document.getElementById(id);
+const clientKey = (value) => value.toLowerCase().replace(/[^a-z0-9]/g, "");
 let state = { jobs: [], records: [] },
   filtered = [];
 async function api(url, options) {
@@ -15,7 +16,53 @@ function cell(row, value) {
 }
 function render() {
   $("summary").textContent =
-    `${state.summary.status} · ${state.summary.totalFiles} files · ${state.summary.completedFiles} completed · ${state.summary.failedFiles} failed · ${state.summary.pendingFiles} processing/pending · ${state.summary.cancelledFiles} cancelled · ${state.summary.importedRecords} imported records · ${state.summary.rejectedRecords} rejected rows · Google: ${state.summary.googleVerifiedFiles} verified, ${state.summary.googleFailedFiles} failed · ${state.summary.localOnlyFiles} local-only`;
+    `${state.summary.status} · ${state.summary.totalFiles} files · ${state.summary.completedFiles} completed · ${state.summary.failedFiles} failed · ${state.summary.pendingFiles} processing/pending · ${state.summary.cancelledFiles} cancelled · ${state.summary.importedRecords} imported records · ${state.summary.rejectedRecords} rejected rows · Google: ${state.summary.verifiedCoverageRecords} records verified · ${state.summary.pendingClientDeliveries} client deliveries pending · ${state.summary.failedClientDeliveries} client deliveries failed`;
+  $("destinations").replaceChildren();
+  for (const delivery of Object.values(state.deliveries ?? {})) {
+    const tr = document.createElement("tr");
+    const destination = delivery.destination;
+    cell(tr, delivery.client);
+    cell(tr, delivery.state);
+    const sheet = cell(tr, "");
+    const id =
+      destination?.spreadsheetId ||
+      state.destinations?.[clientKey(delivery.client)];
+    if (id) {
+      const a = document.createElement("a");
+      a.href =
+        destination?.spreadsheetUrl ||
+        `https://docs.google.com/spreadsheets/d/${encodeURIComponent(id)}/edit`;
+      a.textContent =
+        destination?.spreadsheetName || "Resolving spreadsheet name…";
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      sheet.append(a);
+    } else sheet.textContent = "Waiting for destination";
+    const parents = cell(tr, "");
+    for (const parent of destination?.parents ?? []) {
+      const a = document.createElement("a");
+      a.href = parent.url;
+      a.textContent = parent.name;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      parents.append(a, document.createElement("br"));
+    }
+    if (!destination?.parents?.length)
+      parents.textContent = "Folder not yet verified";
+    cell(tr, destination?.verifiedRecords ?? 0);
+    cell(
+      tr,
+      [
+        destination?.verifiedAt
+          ? new Date(destination.verifiedAt).toLocaleString()
+          : "",
+        delivery.error || "",
+      ]
+        .filter(Boolean)
+        .join(" · "),
+    );
+    $("destinations").append(tr);
+  }
   $("resume").hidden = !state.paused;
   $("verification").textContent = JSON.stringify(state.verification, null, 2);
   const clients = new Map();
@@ -54,7 +101,12 @@ function render() {
       tr,
       `${j.imported} imported · ${j.duplicates} duplicates · ${j.records.length} pending · ${j.errors.length} rejected`,
     );
-    cell(tr, j.sync);
+    cell(
+      tr,
+      j.state === "completed"
+        ? state.deliveries?.[clientKey(j.client)]?.state || "pending"
+        : j.sync,
+    );
     const detail = cell(tr, "");
     const details = document.createElement("details");
     const summary = document.createElement("summary");
@@ -112,17 +164,7 @@ function render() {
     a.target = "_blank";
     a.rel = "noopener noreferrer";
     td.append(a);
-    cell(
-      tr,
-      state.jobs
-        .filter(
-          (j) =>
-            j.client === r.clientName &&
-            j.state !== "cancelled" &&
-            j.sync !== "not-required",
-        )
-        .at(-1)?.sync || "pending",
-    );
+    cell(tr, state.deliveries?.[clientKey(r.clientName)]?.state || "pending");
     $("records").append(tr);
   }
 }

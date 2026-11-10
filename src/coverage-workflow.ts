@@ -3,7 +3,11 @@ import path from "node:path";
 import { randomUUID, createHash } from "node:crypto";
 import { parse } from "csv-parse/sync";
 import readXlsx from "read-excel-file/node";
-import type { CoverageRecord, ClientRecord } from "./domain.js";
+import type {
+  CoverageRecord,
+  ClientRecord,
+  CoverageDestination,
+} from "./domain.js";
 import { normalizeDate } from "./normalize.js";
 
 export async function atomicJson(file: string, value: unknown) {
@@ -119,6 +123,7 @@ export interface Job {
   errors: RowError[];
   imported: number;
   duplicates: number;
+  // Retain old tags in upload history only; deliveries are authoritative for every client.
   sync: "pending" | "verified" | "local-only" | "failed" | "not-required";
   attempts: number;
   error?: string;
@@ -134,6 +139,16 @@ export interface CoverageState {
   destinations: Record<string, string>;
   syncedSignatures?: Record<string, string>;
   automatic?: boolean;
+  deliveries?: Record<string, CoverageDelivery>;
+}
+export interface CoverageDelivery {
+  client: string;
+  state: "pending" | "running" | "verified" | "failed";
+  signature: string;
+  attempts: number;
+  nextAttemptAt?: number;
+  error?: string;
+  destination?: CoverageDestination;
 }
 export const emptyCoverage = (): CoverageState => ({
   version: 2,
@@ -156,7 +171,7 @@ export class CoverageWorkflow {
       records: CoverageRecord[],
       destination: string | undefined,
       save: (id: string) => Promise<void>,
-    ) => Promise<void>,
+    ) => Promise<void | CoverageDestination>,
   ) {}
   get file() {
     return path.join(this.directory, "coverage-v2.json");
@@ -182,6 +197,12 @@ export class CoverageWorkflow {
     if (!this.state.automatic) {
       this.state.paused = false;
       this.state.automatic = true;
+    }
+    if (!options.readOnly) {
+      if (!this.state.deliveries) this.state.paused = false;
+      for (const delivery of Object.values(this.state.deliveries ?? {}))
+        if (delivery.state === "running") delivery.state = "pending";
+      this.scheduleDeliveries();
     }
     if (!options.readOnly) await this.save();
   }
@@ -363,9 +384,21 @@ export class CoverageWorkflow {
           j.nextAttemptAt = undefined;
         }
       this.state.paused = false;
+      for (const delivery of Object.values(this.state.deliveries ?? {}))
+        if (delivery.state === "failed") {
+          delivery.state = "pending";
+          delivery.attempts = 0;
+          delivery.nextAttemptAt = undefined;
+        }
     } else if (action === "cancel") {
       for (const j of this.state.jobs)
         if (j.state === "pending") j.state = "cancelled";
+      for (const delivery of Object.values(this.state.deliveries ?? {}))
+        if (delivery.state === "pending") {
+          delivery.state = "failed";
+          delivery.error = "Delivery cancelled by user";
+          delivery.nextAttemptAt = undefined;
+        }
     } else throw new Error("Unknown queue action");
     await this.save();
   }
@@ -378,7 +411,15 @@ export class CoverageWorkflow {
           j.state === "pending" &&
           (!j.nextAttemptAt || j.nextAttemptAt <= Date.now()),
       );
-      if (!j) return;
+      if (!j) {
+        const delivery = Object.values(this.state.deliveries ?? {}).find(
+          (d) =>
+            d.state === "pending" &&
+            (!d.nextAttemptAt || d.nextAttemptAt <= Date.now()),
+        );
+        if (delivery) await this.deliverClient(delivery.client);
+        return;
+      }
       j.state = "running";
       await this.save();
       if (!j.records.length && !j.imported && !j.duplicates) {
@@ -402,70 +443,111 @@ export class CoverageWorkflow {
         b.publicationDate.localeCompare(a.publicationDate),
       );
       await this.save();
-      try {
-        if (key(j.client) === "conquest") j.sync = "local-only";
-        else {
-          const records = this.state.records.filter(
-            (r) => key(r.clientName) === key(j.client),
-          );
-          const signature = coverageSignature(records);
-          if (this.state.syncedSignatures?.[key(j.client)] !== signature) {
-            await this.sync(
-              j.client,
-              records,
-              this.state.destinations[key(j.client)],
-              async (id) => {
-                this.state.destinations[key(j.client)] = id;
-                await this.save();
-              },
-            );
-            (this.state.syncedSignatures ??= {})[key(j.client)] = signature;
-          }
-          j.sync = "verified";
-        }
+      const delivery = await this.deliverClient(j.client);
+      if (delivery.state === "verified") {
+        j.sync = "verified";
         j.state = "completed";
         j.error = undefined;
-      } catch (e) {
-        j.error = e instanceof Error ? e.message : String(e);
+      } else {
+        j.error = delivery.error;
         j.sync = "failed";
-        j.attempts++;
-        const status = Number((e as any)?.response?.status || (e as any)?.code);
-        const temporary =
-          !status || [408, 429, 500, 502, 503, 504].includes(status);
-        j.state = temporary && j.attempts < 5 ? "pending" : "failed";
-        j.nextAttemptAt = Date.now() + Math.min(30000, 1000 * 2 ** j.attempts);
+        j.attempts = delivery.attempts;
+        j.state = delivery.state === "failed" ? "failed" : "pending";
+        j.nextAttemptAt = delivery.nextAttemptAt;
       }
       await this.save();
     } finally {
       this.busy = false;
     }
   }
+  private clientRecords(client: string) {
+    return this.state.records
+      .filter((r) => key(r.clientName) === key(client))
+      .sort((a, b) => b.publicationDate.localeCompare(a.publicationDate));
+  }
+  private scheduleDeliveries() {
+    const deliveries = (this.state.deliveries ??= {});
+    for (const client of new Set(this.state.records.map((r) => r.clientName))) {
+      const signature = coverageSignature(this.clientRecords(client));
+      const previous = deliveries[key(client)];
+      if (!previous || previous.signature !== signature)
+        deliveries[key(client)] = {
+          client,
+          signature,
+          state: "pending",
+          attempts: 0,
+          destination: previous?.destination,
+        };
+    }
+  }
+  private async deliverClient(client: string) {
+    this.scheduleDeliveries();
+    const delivery = this.state.deliveries![key(client)];
+    if (delivery.state === "verified") return delivery;
+    delivery.state = "running";
+    await this.save();
+    try {
+      const destination = await this.sync(
+        client,
+        this.clientRecords(client),
+        this.state.destinations[key(client)],
+        async (id) => {
+          this.state.destinations[key(client)] = id;
+          await this.save();
+        },
+      );
+      if (destination) delivery.destination = destination;
+      delivery.state = "verified";
+      delivery.error = undefined;
+      delivery.nextAttemptAt = undefined;
+      (this.state.syncedSignatures ??= {})[key(client)] = delivery.signature;
+    } catch (error: any) {
+      delivery.error = error instanceof Error ? error.message : String(error);
+      delivery.attempts++;
+      const status = Number(error.response?.status || error.code);
+      const temporary =
+        !status || [408, 429, 500, 502, 503, 504].includes(status);
+      delivery.state =
+        temporary && delivery.attempts < 5 ? "pending" : "failed";
+      delivery.nextAttemptAt =
+        Date.now() + Math.min(30000, 1000 * 2 ** delivery.attempts);
+    }
+    await this.save();
+    return delivery;
+  }
   verification() {
     return {
       coverageRecords: this.state.records.length,
       uploadJobs: this.state.jobs.length,
-      pendingCoverageSynchronizationJobs: this.state.jobs.filter(
-        (j) =>
-          j.state !== "cancelled" &&
-          (j.sync === "pending" || j.sync === "failed"),
-      ).length,
+      pendingCoverageSynchronizationJobs:
+        this.state.jobs.filter(
+          (j) =>
+            j.state !== "cancelled" &&
+            (j.sync === "pending" || j.sync === "failed"),
+        ).length +
+        Object.values(this.state.deliveries ?? {}).filter(
+          (d) => d.state === "pending" || d.state === "running",
+        ).length,
       coverageResearchCacheEntries: 0,
       legacyCoverageMigrationsActive: false,
     };
   }
   summary() {
     const jobs = this.state.jobs,
-      pending = jobs.some(
-        (j) => j.state === "pending" || j.state === "running",
-      );
+      pending =
+        jobs.some((j) => j.state === "pending" || j.state === "running") ||
+        Object.values(this.state.deliveries ?? {}).some(
+          (d) => d.state === "pending" || d.state === "running",
+        );
     return {
-      status: !jobs.length
-        ? "Idle"
-        : !pending
-          ? "Completed"
-          : this.state.paused
-            ? "Paused"
-            : "Running",
+      status:
+        !jobs.length && !this.state.records.length
+          ? "Idle"
+          : !pending
+            ? "Completed"
+            : this.state.paused
+              ? "Paused"
+              : "Running",
       totalFiles: jobs.length,
       completedFiles: jobs.filter((j) => j.state === "completed").length,
       failedFiles: jobs.filter((j) => j.state === "failed").length,
@@ -475,9 +557,22 @@ export class CoverageWorkflow {
       ).length,
       importedRecords: this.state.records.length,
       rejectedRecords: jobs.reduce((n, j) => n + j.errors.length, 0),
-      googleVerifiedFiles: jobs.filter((j) => j.sync === "verified").length,
+      googleVerifiedFiles: jobs.filter(
+        (j) =>
+          j.sync === "verified" ||
+          (j.state === "completed" &&
+            this.state.deliveries?.[key(j.client)]?.state === "verified"),
+      ).length,
       googleFailedFiles: jobs.filter((j) => j.sync === "failed").length,
-      localOnlyFiles: jobs.filter((j) => j.sync === "local-only").length,
+      pendingClientDeliveries: Object.values(
+        this.state.deliveries ?? {},
+      ).filter((d) => d.state === "pending" || d.state === "running").length,
+      failedClientDeliveries: Object.values(this.state.deliveries ?? {}).filter(
+        (d) => d.state === "failed",
+      ).length,
+      verifiedCoverageRecords: Object.values(
+        this.state.deliveries ?? {},
+      ).reduce((n, d) => n + (d.destination?.verifiedRecords ?? 0), 0),
     };
   }
 }

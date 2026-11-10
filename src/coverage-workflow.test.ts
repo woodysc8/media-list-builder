@@ -161,6 +161,7 @@ const fail = new CoverageWorkflow(directory, clients, async () => {
 });
 await fail.load();
 fail.state.syncedSignatures = {};
+fail.state.deliveries!.acme.state = "pending";
 await fail.enqueue(csv, "Acme PRCC retry.csv");
 await fail.tick();
 assert.equal(fail.state.jobs.at(-1)?.state, "pending");
@@ -174,7 +175,7 @@ assert.equal(queue.state.jobs.at(-1)?.sync, "verified");
 assert.equal(queue.state.records.length, 2);
 await queue.enqueue(csv, "Conquest PRCC.csv", "Conquest");
 await queue.tick();
-assert.equal(queue.state.jobs.at(-1)?.sync, "local-only");
+assert.equal(queue.state.jobs.at(-1)?.sync, "verified");
 await queue.enqueue(csv, "Acme PRCC pending.csv");
 await queue.control("cancel");
 assert.equal(queue.state.jobs.at(-1)?.state, "cancelled");
@@ -183,18 +184,30 @@ process.env.GOOGLE_CLIENT_ID = "fixture";
 process.env.GOOGLE_CLIENT_SECRET = "fixture";
 const google = new GoogleWorkspace("fixture", { access_token: "fixture" });
 const transport = google as any;
+const fakeFileGet = async (r: any) => ({
+  data:
+    r.fileId === "fixture"
+      ? {
+          id: "fixture",
+          name: "Configured Folder",
+          mimeType: "application/vnd.google-apps.folder",
+          capabilities: { canAddChildren: true },
+        }
+      : {
+          id: r.fileId,
+          name: "Acme - Clean Coverage",
+          mimeType: "application/vnd.google-apps.spreadsheet",
+          parents: ["fixture"],
+          capabilities: { canEdit: true },
+        },
+});
 let written: unknown;
 let creates = 0;
 let saved = "";
 transport.drive = {
   files: {
     list: async () => ({ data: { files: [] } }),
-    get: async () => ({
-      data: {
-        mimeType: "application/vnd.google-apps.spreadsheet",
-        capabilities: { canEdit: true },
-      },
-    }),
+    get: fakeFileGet,
     create: async () => {
       creates++;
       return { data: { id: "new" } };
@@ -324,8 +337,9 @@ assert.equal(
   1,
   "Destination discovery reuses the client spreadsheet after a lost create response",
 );
-transport.drive.files.get = async () => {
-  throw { code: 404 };
+transport.drive.files.get = async (r: any) => {
+  if (r.fileId === "deleted") throw { code: 404 };
+  return fakeFileGet(r);
 };
 await google.syncCleanCoverage(
   "Acme",
@@ -342,12 +356,7 @@ assert.equal(
   "A deleted approved destination resolves to the existing dedicated sheet",
 );
 assert.equal(creates, 1);
-transport.drive.files.get = async () => ({
-  data: {
-    mimeType: "application/vnd.google-apps.spreadsheet",
-    capabilities: { canEdit: true },
-  },
-});
+transport.drive.files.get = fakeFileGet;
 transport.sheets.spreadsheets.get = async () => ({
   data: {
     sheets: [
@@ -387,9 +396,26 @@ transport.sheets.spreadsheets.get = async () => ({
     ],
   },
 });
-transport.drive.files.get=async()=>({data:{name:'Master Reporter List',mimeType:'application/vnd.google-apps.spreadsheet'}});
-await assert.rejects(google.syncCleanCoverage('Acme',queue.state.records,'master',async()=>{},'fixture'),/cannot be coverage destinations/);
-transport.drive.files.get=async()=>({data:{mimeType:'application/vnd.google-apps.spreadsheet',capabilities:{canEdit:true}}});
+transport.drive.files.get = async (r: any) =>
+  r.fileId === "fixture"
+    ? fakeFileGet(r)
+    : {
+        data: {
+          name: "Master Reporter List",
+          mimeType: "application/vnd.google-apps.spreadsheet",
+        },
+      };
+await assert.rejects(
+  google.syncCleanCoverage(
+    "Acme",
+    queue.state.records,
+    "master",
+    async () => {},
+    "fixture",
+  ),
+  /cannot be coverage destinations/,
+);
+transport.drive.files.get = fakeFileGet;
 transport.sheets.spreadsheets.values.get = async () => ({
   data: { values: [] },
 });
@@ -402,6 +428,25 @@ await assert.rejects(
     "fixture",
   ),
   /verification failed/,
+);
+transport.drive.files.get = async () => {
+  throw { code: 403, message: "Folder access denied" };
+};
+const createsBeforeInvalidFolder = creates;
+await assert.rejects(
+  google.syncCleanCoverage(
+    "Acme",
+    queue.state.records,
+    undefined,
+    async () => {},
+    "fixture",
+  ),
+  /Configured Google Drive folder is invalid or inaccessible/,
+);
+assert.equal(
+  creates,
+  createsBeforeInvalidFolder,
+  "An inaccessible folder must never fall back to creating a sheet elsewhere",
 );
 const isolated = new StructuredStore(path.join(directory, "store.json"), true);
 await isolated.load({ readOnly: true });

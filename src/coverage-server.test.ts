@@ -38,23 +38,27 @@ async function stop() {
   await done;
 }
 async function start() {
-  child = spawn(process.execPath, ["--import", "tsx", "src/server.ts"], {
-    cwd: process.cwd(),
-    env: {
-      ...process.env,
-      PORT: "0",
-      VERCEL: "0",
-      REPORTER_PREFLIGHT_READ_ONLY: "0",
-      APP_ACCESS_PASSWORD: "",
-      DATA_FILE: file,
-      APP_CONFIG_FILE: path.join(data, "app-config.json"),
-      GOOGLE_AUTH_FILE: path.join(data, "google-auth.json"),
-      GOOGLE_CLIENT_ID: "fixture",
-      GOOGLE_CLIENT_SECRET: "fixture",
+  child = spawn(
+    process.execPath,
+    ["--import", "tsx", "src/coverage-server-fixture.ts"],
+    {
+      cwd: process.cwd(),
+      env: {
+        ...process.env,
+        PORT: "0",
+        VERCEL: "0",
+        REPORTER_PREFLIGHT_READ_ONLY: "0",
+        APP_ACCESS_PASSWORD: "",
+        DATA_FILE: file,
+        APP_CONFIG_FILE: path.join(data, "app-config.json"),
+        GOOGLE_AUTH_FILE: path.join(data, "google-auth.json"),
+        GOOGLE_CLIENT_ID: "fixture",
+        GOOGLE_CLIENT_SECRET: "fixture",
+      },
+      stdio: ["ignore", "pipe", "pipe"],
+      windowsHide: true,
     },
-    stdio: ["ignore", "pipe", "pipe"],
-    windowsHide: true,
-  });
+  );
   return await new Promise<string>((resolve, reject) => {
     let log = "";
     const timer = setTimeout(
@@ -168,6 +172,15 @@ try {
   );
   assert.equal(state.records.length, 1);
   assert.equal(state.jobs[1].duplicates, 1);
+  assert.equal(state.deliveries.conquest.destination.verifiedRecords, 1);
+  assert.equal(
+    state.deliveries.conquest.destination.spreadsheetUrl,
+    "https://docs.google.com/spreadsheets/d/fixture-conquest/edit",
+  );
+  assert.equal(
+    state.deliveries.conquest.destination.parents[0].name,
+    "Fixture folder",
+  );
   assert.equal(state.summary.status, "Completed");
   assert.equal(
     JSON.parse(await readFile(file, "utf8")).reporters[0].notes,

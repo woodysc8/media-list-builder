@@ -69,7 +69,7 @@ let workspace: GoogleWorkspace | undefined;
 let reportersHydrated = false;
 const appConfigPath = path.resolve(process.env.APP_CONFIG_FILE ?? "data/app-config.json");
 const googleAuthPath = path.resolve(process.env.GOOGLE_AUTH_FILE ?? "data/google-auth.json");
-const coverageWorkflow = new CoverageWorkflow(path.dirname(storePath), () => store.snapshot.clients, async (client, records, destination, persist) => {
+const coverageWorkflow: CoverageWorkflow = new CoverageWorkflow(path.dirname(storePath), () => store.snapshot.clients, async (client, records, destination, persist) => {
   if (!workspace?.connected) throw new Error('Google is not connected; local import is saved');
   const config=await readOptionalJson<{coverageDestinations?:Record<string,string|{spreadsheetId:string;tab?:string}>}>(appConfigPath);
   const normalized=(value:string)=>value.toLowerCase().replace(/[^a-z0-9]/g,'');
@@ -77,7 +77,7 @@ const coverageWorkflow = new CoverageWorkflow(path.dirname(storePath), () => sto
   const approved=Object.entries(config?.coverageDestinations??{}).filter(([name])=>[client,identity?.id,...(identity?.aliases??[])].some(value=>value && normalized(value)===normalized(name)));
   if(approved.length>1 && new Set(approved.map(([,v])=>JSON.stringify(v))).size>1) throw new Error('Multiple approved coverage destinations for this client; configuration needs attention');
   const mapping=approved[0]?.[1];
-  await workspace.syncCleanCoverage(client, records, (typeof mapping==='string'?mapping:mapping?.spreadsheetId) || destination, persist, coverageWorkflow.state.generation, typeof mapping==='object'?mapping.tab:undefined);
+  return workspace.syncCleanCoverage(client, records, (typeof mapping==='string'?mapping:mapping?.spreadsheetId) || destination, persist, coverageWorkflow.state.generation, typeof mapping==='object'?mapping.tab:undefined);
 });
 if (process.env.VERCEL !== '1') {
   await coverageWorkflow.load({readOnly:reporterPreflightReadOnly});
