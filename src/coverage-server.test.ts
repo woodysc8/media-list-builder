@@ -89,6 +89,7 @@ try {
   let state = await read(base, "/api/clean-coverage");
   assert.equal(state.verification.coverageRecords, 0);
   assert.equal(state.verification.uploadJobs, 0);
+  assert.equal(state.summary.status, "Idle");
   const reference = await read(base, "/api/reference-data");
   assert.equal(reference.reporterSource.kind, "local");
   assert.equal(reference.reporters.length, 1);
@@ -98,6 +99,25 @@ try {
     false,
   );
   assert.equal((await fetch(base + "/coverage.html")).status, 200);
+  const approved = {
+    Acme: { spreadsheetId: "fixture-approved", tab: "Coverage" },
+  };
+  await atomicJson(path.join(data, "app-config.json"), {
+    rootFolderId: "fixture",
+    coverageDestinations: approved,
+  });
+  const configured = await fetch(base + "/api/config", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ rootFolderId: "fixture" }),
+  });
+  assert.equal(configured.status, 200);
+  assert.deepEqual(
+    JSON.parse(await readFile(path.join(data, "app-config.json"), "utf8"))
+      .coverageDestinations,
+    approved,
+    "OAuth configuration saves preserve approved coverage destinations",
+  );
   assert.equal(
     (await fetch(base + "/api/ingest", { method: "POST" })).status,
     410,
@@ -134,11 +154,7 @@ try {
   });
   assert.equal(response.status, 200);
   assert.equal(((await response.json()) as any).jobs.length, 2);
-  await fetch(base + "/api/clean-coverage/control", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ action: "start" }),
-  });
+  // No start/control call: upload must persist automatic processing across restart.
   await stop();
   base = await start();
   for (let i = 0; i < 20; i++) {
@@ -152,6 +168,7 @@ try {
   );
   assert.equal(state.records.length, 1);
   assert.equal(state.jobs[1].duplicates, 1);
+  assert.equal(state.summary.status, "Completed");
   assert.equal(
     JSON.parse(await readFile(file, "utf8")).reporters[0].notes,
     "preserve",

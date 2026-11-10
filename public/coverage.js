@@ -15,7 +15,8 @@ function cell(row, value) {
 }
 function render() {
   $("summary").textContent =
-    `${state.paused ? "Paused" : "Running"} · ${state.jobs.length} files · ${state.jobs.filter((j) => j.state === "completed").length} completed · ${state.jobs.filter((j) => j.state === "failed").length} failed`;
+    `${state.summary.status} · ${state.summary.totalFiles} files · ${state.summary.completedFiles} completed · ${state.summary.failedFiles} failed · ${state.summary.pendingFiles} processing/pending · ${state.summary.cancelledFiles} cancelled · ${state.summary.importedRecords} imported records · ${state.summary.rejectedRecords} rejected rows · Google: ${state.summary.googleVerifiedFiles} verified, ${state.summary.googleFailedFiles} failed · ${state.summary.localOnlyFiles} local-only`;
+  $("resume").hidden = !state.paused;
   $("verification").textContent = JSON.stringify(state.verification, null, 2);
   const clients = new Map();
   for (const j of state.jobs) {
@@ -48,7 +49,7 @@ function render() {
     const tr = document.createElement("tr");
     cell(tr, `${j.file} ${j.year}`);
     cell(tr, j.client);
-    cell(tr, j.state);
+    cell(tr, j.needsAttention ? "Needs attention" : j.state);
     cell(
       tr,
       `${j.imported} imported · ${j.duplicates} duplicates · ${j.records.length} pending · ${j.errors.length} rejected`,
@@ -57,7 +58,7 @@ function render() {
     const detail = cell(tr, "");
     const details = document.createElement("details");
     const summary = document.createElement("summary");
-    summary.textContent = "Preview / errors";
+    summary.textContent = "Errors / review (optional)";
     details.append(summary);
     const pre = document.createElement("pre");
     pre.textContent = [
@@ -113,8 +114,14 @@ function render() {
     td.append(a);
     cell(
       tr,
-      state.jobs.filter((j) => j.client === r.clientName).at(-1)?.sync ||
-        "pending",
+      state.jobs
+        .filter(
+          (j) =>
+            j.client === r.clientName &&
+            j.state !== "cancelled" &&
+            j.sync !== "not-required",
+        )
+        .at(-1)?.sync || "pending",
     );
     $("records").append(tr);
   }
@@ -127,21 +134,22 @@ async function refresh() {
     $("message").textContent = e.message;
   }
 }
-$("upload").onsubmit = async (e) => {
-  e.preventDefault();
-  const files = [...$("files").files];
+let uploading = false;
+const transfers = [];
+async function uploadFiles(files) {
+  transfers.push(...files);
+  if (uploading) return;
+  uploading = true;
   let accepted = 0;
   const errors = [];
-  const button = $("upload").querySelector("button");
-  button.disabled = true;
   try {
     // Transfer sequentially so selecting a large batch does not buffer it all on the server.
-    for (const file of files) {
+    while (transfers.length) {
+      const file = transfers.shift();
       $("message").textContent =
-        `Uploading ${accepted + errors.length + 1}/${files.length}: ${file.name}`;
+        `Uploading ${file.name} · ${transfers.length} files still transferring`;
       const data = new FormData();
       data.append("files", file);
-      data.append("client", $("client").value);
       try {
         const result = await api("/api/clean-coverage/upload", {
           method: "POST",
@@ -156,11 +164,16 @@ $("upload").onsubmit = async (e) => {
       }
     }
     $("message").textContent =
-      `${accepted} files saved. Review the queue, then start processing. ${errors.join(" | ")}`;
+      `${accepted} files uploaded. Processing and Google synchronization continue automatically. ${errors.join(" | ")}`;
     await refresh();
   } finally {
-    button.disabled = false;
+    uploading = false;
   }
+}
+$("upload").onsubmit = (e) => e.preventDefault();
+$("files").onchange = () => {
+  void uploadFiles([...$("files").files]);
+  $("files").value = "";
 };
 $("controls").onclick = async (e) => {
   if (!e.target.dataset.action) return;
@@ -178,7 +191,7 @@ $("controls").onclick = async (e) => {
 $("drop").ondragover = (e) => e.preventDefault();
 $("drop").ondrop = (e) => {
   e.preventDefault();
-  $("files").files = e.dataTransfer.files;
+  void uploadFiles([...e.dataTransfer.files]);
 };
 $("filters").oninput = render;
 $("export").onclick = () => {

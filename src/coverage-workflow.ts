@@ -1,6 +1,6 @@
 import { mkdir, readFile, writeFile, rename } from "node:fs/promises";
 import path from "node:path";
-import { randomUUID } from "node:crypto";
+import { randomUUID, createHash } from "node:crypto";
 import { parse } from "csv-parse/sync";
 import readXlsx from "read-excel-file/node";
 import type { CoverageRecord, ClientRecord } from "./domain.js";
@@ -21,6 +21,82 @@ export function validUrl(value: string) {
   }
 }
 const key = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+export function identifyClient(
+  filename: string,
+  clients: ClientRecord[],
+  explicit = "",
+) {
+  const stem = path.basename(filename).replace(/\.[^.]+$/, "");
+  const normalize = (value: string) =>
+    value
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+  const convention = stem.match(
+    /^(.+?)[\s_-]+(?:PRCC\b|PR[\s_-]+Campaign\b|20\d\d\b)/i,
+  );
+  const detected = convention?.[1]?.replace(/[\s_-]+$/, "").trim();
+  const exact = detected
+    ? clients.filter((c) =>
+        [c.name, ...c.aliases].some((n) => key(n) === key(detected)),
+      )
+    : [];
+  const name = normalize(detected || stem);
+  const matches = clients.filter((c) =>
+    [c.name, ...c.aliases].some((alias) => {
+      const normalized = normalize(alias);
+      return !!normalized && ` ${name} `.includes(` ${normalized} `);
+    }),
+  );
+  if (explicit) {
+    const exact = clients.filter((c) =>
+      [c.name, ...c.aliases].some((n) => key(n) === key(explicit)),
+    );
+    if (exact.length > 1)
+      return { client: "", error: "Ambiguous client identity" };
+    return { client: exact[0]?.name || explicit.trim() };
+  }
+  if (exact.length === 1) return { client: exact[0].name };
+  if (exact.length > 1)
+    return { client: "", error: "Ambiguous client identity" };
+  if (matches.length === 1) return { client: matches[0].name };
+  if (matches.length > 1)
+    return {
+      client: "",
+      error:
+        "Ambiguous client: filename matches multiple saved identities or aliases",
+    };
+  if (
+    !detected ||
+    /^(unknown|untitled|export|copy|coverage|report|data)$/i.test(detected)
+  )
+    return {
+      client: "",
+      error: "Client could not be reliably identified from the filename",
+    };
+  return { client: key(detected) === "wealth" ? "Wealth.com" : detected };
+}
+export function coverageSignature(records: CoverageRecord[]) {
+  return createHash("sha256")
+    .update(
+      JSON.stringify(
+        records.map((r) => [
+          r.publicationDate,
+          r.articleTitle,
+          r.clientName,
+          r.outlet,
+          r.reporterName,
+          r.spokesperson,
+          r.originalPressType || r.coverageType,
+          r.sentiment,
+          r.status,
+          r.reach ?? "",
+          r.articleUrl,
+        ]),
+      ),
+    )
+    .digest("hex");
+}
 function coverageIdentity(record: CoverageRecord) {
   const url = new URL(record.articleUrl);
   url.hash = "";
@@ -46,6 +122,8 @@ export interface Job {
   sync: "pending" | "verified" | "local-only" | "failed" | "not-required";
   attempts: number;
   error?: string;
+  needsAttention?: boolean;
+  nextAttemptAt?: number;
 }
 export interface CoverageState {
   version: 2;
@@ -54,11 +132,14 @@ export interface CoverageState {
   records: CoverageRecord[];
   jobs: Job[];
   destinations: Record<string, string>;
+  syncedSignatures?: Record<string, string>;
+  automatic?: boolean;
 }
 export const emptyCoverage = (): CoverageState => ({
   version: 2,
   generation: randomUUID(),
-  paused: true,
+  paused: false,
+  automatic: true,
   records: [],
   jobs: [],
   destinations: {},
@@ -97,6 +178,11 @@ export class CoverageWorkflow {
     }
     for (const job of this.state.jobs)
       if (job.state === "running") job.state = "pending";
+    // Upgrade only the queue policy; never reset coverage, destinations or completed jobs.
+    if (!this.state.automatic) {
+      this.state.paused = false;
+      this.state.automatic = true;
+    }
     if (!options.readOnly) await this.save();
   }
   save() {
@@ -107,33 +193,22 @@ export class CoverageWorkflow {
   }
   async enqueue(buffer: Buffer, filename: string, explicitClient = "") {
     const tables: { tab: string; rows: unknown[][] }[] = [];
-    if (/\.xlsx$/i.test(filename)) {
-      for (const sheet of await readXlsx(buffer))
-        tables.push({ tab: sheet.sheet, rows: sheet.data });
-    } else if (/\.csv$/i.test(filename))
-      tables.push({
-        tab: "",
-        rows: parse(buffer, { bom: true, skip_empty_lines: false }),
-      });
-    else throw new Error("Only CSV and XLSX files are supported");
-    const known = this.clients()
-      .filter((c) =>
-        [c.name, ...c.aliases].some(
-          (n) => !!key(n) && key(filename).startsWith(key(n)),
-        ),
-      )
-      .sort((a, b) => b.name.length - a.name.length)[0];
-    const detected =
-      explicitClient ||
-      known?.name ||
-      filename
-        .replace(/\.[^.]+$/, "")
-        .split(/\s+(?:PRCC|PR Campaign|20\d\d)\b/i)[0]
-        .replace(/[ _-]+$/, "");
-    const canonical =
-      this.clients().find((c) =>
-        [c.name, ...c.aliases].some((n) => key(n) === key(detected)),
-      )?.name || detected;
+    let parsingError = "";
+    try {
+      if (/\.xlsx$/i.test(filename)) {
+        for (const sheet of await readXlsx(buffer))
+          tables.push({ tab: sheet.sheet, rows: sheet.data });
+      } else if (/\.csv$/i.test(filename))
+        tables.push({
+          tab: "",
+          rows: parse(buffer, { bom: true, skip_empty_lines: false }),
+        });
+      else throw new Error("Only CSV and XLSX files are supported");
+    } catch (error) {
+      parsingError = error instanceof Error ? error.message : String(error);
+    }
+    const identity = identifyClient(filename, this.clients(), explicitClient);
+    const canonical = identity.client;
     const job: Job = {
       id: randomUUID(),
       file: path.basename(filename),
@@ -147,6 +222,18 @@ export class CoverageWorkflow {
       sync: "pending",
       attempts: 0,
     };
+    if (identity.error) {
+      job.state = "failed";
+      job.needsAttention = true;
+      job.error = identity.error;
+      job.sync = "not-required";
+    }
+    if (parsingError) {
+      job.state = "failed";
+      job.needsAttention = true;
+      job.sync = "not-required";
+      job.error = `Unable to parse ${job.file}: ${parsingError}`;
+    }
     for (const { tab, rows } of tables) {
       job.year ||= tab.match(/20\d\d/)?.[0] || "";
       const header = rows.findIndex(
@@ -204,7 +291,8 @@ export class CoverageWorkflow {
           "coverageurl",
           "link",
         );
-        if (!validUrl(url) || !canonical) {
+        if (!canonical) continue;
+        if (!validUrl(url)) {
           job.errors.push({
             file: job.file,
             tab,
@@ -218,7 +306,9 @@ export class CoverageWorkflow {
         const now = new Date().toISOString();
         job.records.push({
           id: randomUUID(),
-          clientId: key(canonical),
+          clientId:
+            this.clients().find((c) => key(c.name) === key(canonical))?.id ||
+            key(canonical),
           clientName: canonical,
           reporterName: get("reporter", "reportername", "author"),
           outlet: get("publication", "mediaoutlet", "outlet"),
@@ -253,6 +343,7 @@ export class CoverageWorkflow {
       buffer,
     );
     this.state.jobs.push(job);
+    this.state.paused = false;
     await this.save();
     return job;
   }
@@ -262,9 +353,14 @@ export class CoverageWorkflow {
       this.state.paused = false;
     else if (action === "retry") {
       for (const j of this.state.jobs)
-        if (j.state === "failed") {
+        if (
+          j.state === "failed" &&
+          !j.needsAttention &&
+          j.sync !== "not-required"
+        ) {
           j.state = "pending";
           j.attempts = 0;
+          j.nextAttemptAt = undefined;
         }
       this.state.paused = false;
     } else if (action === "cancel") {
@@ -277,7 +373,11 @@ export class CoverageWorkflow {
     if (this.busy || this.state.paused) return;
     this.busy = true;
     try {
-      const j = this.state.jobs.find((j) => j.state === "pending");
+      const j = this.state.jobs.find(
+        (j) =>
+          j.state === "pending" &&
+          (!j.nextAttemptAt || j.nextAttemptAt <= Date.now()),
+      );
       if (!j) return;
       j.state = "running";
       await this.save();
@@ -305,17 +405,22 @@ export class CoverageWorkflow {
       try {
         if (key(j.client) === "conquest") j.sync = "local-only";
         else {
-          await this.sync(
-            j.client,
-            this.state.records.filter(
-              (r) => key(r.clientName) === key(j.client),
-            ),
-            this.state.destinations[key(j.client)],
-            async (id) => {
-              this.state.destinations[key(j.client)] = id;
-              await this.save();
-            },
+          const records = this.state.records.filter(
+            (r) => key(r.clientName) === key(j.client),
           );
+          const signature = coverageSignature(records);
+          if (this.state.syncedSignatures?.[key(j.client)] !== signature) {
+            await this.sync(
+              j.client,
+              records,
+              this.state.destinations[key(j.client)],
+              async (id) => {
+                this.state.destinations[key(j.client)] = id;
+                await this.save();
+              },
+            );
+            (this.state.syncedSignatures ??= {})[key(j.client)] = signature;
+          }
           j.sync = "verified";
         }
         j.state = "completed";
@@ -324,11 +429,11 @@ export class CoverageWorkflow {
         j.error = e instanceof Error ? e.message : String(e);
         j.sync = "failed";
         j.attempts++;
-        j.state = j.attempts < 5 ? "pending" : "failed";
-        await this.save();
-        await new Promise((r) =>
-          setTimeout(r, Math.min(30000, 1000 * 2 ** j.attempts)),
-        );
+        const status = Number((e as any)?.response?.status || (e as any)?.code);
+        const temporary =
+          !status || [408, 429, 500, 502, 503, 504].includes(status);
+        j.state = temporary && j.attempts < 5 ? "pending" : "failed";
+        j.nextAttemptAt = Date.now() + Math.min(30000, 1000 * 2 ** j.attempts);
       }
       await this.save();
     } finally {
@@ -346,6 +451,33 @@ export class CoverageWorkflow {
       ).length,
       coverageResearchCacheEntries: 0,
       legacyCoverageMigrationsActive: false,
+    };
+  }
+  summary() {
+    const jobs = this.state.jobs,
+      pending = jobs.some(
+        (j) => j.state === "pending" || j.state === "running",
+      );
+    return {
+      status: !jobs.length
+        ? "Idle"
+        : !pending
+          ? "Completed"
+          : this.state.paused
+            ? "Paused"
+            : "Running",
+      totalFiles: jobs.length,
+      completedFiles: jobs.filter((j) => j.state === "completed").length,
+      failedFiles: jobs.filter((j) => j.state === "failed").length,
+      cancelledFiles: jobs.filter((j) => j.state === "cancelled").length,
+      pendingFiles: jobs.filter(
+        (j) => j.state === "pending" || j.state === "running",
+      ).length,
+      importedRecords: this.state.records.length,
+      rejectedRecords: jobs.reduce((n, j) => n + j.errors.length, 0),
+      googleVerifiedFiles: jobs.filter((j) => j.sync === "verified").length,
+      googleFailedFiles: jobs.filter((j) => j.sync === "failed").length,
+      localOnlyFiles: jobs.filter((j) => j.sync === "local-only").length,
     };
   }
 }

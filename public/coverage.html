@@ -55,20 +55,16 @@
                 required
             /></label>
           </div>
-          <label
-            >Client override (optional)
-            <input
-              id="client"
-              placeholder="Otherwise detected from filename" /></label
-          ><button>Upload and preview</button>
         </form>
         <p>
-          Review detected clients, accepted rows and row errors before starting.
-          Pause stops after the current file. Retry preserves successful local
-          imports.
+          Selected or dropped files upload and process automatically. Valid rows
+          synchronize to Google; rejected rows and files needing attention
+          remain available in the optional errors view. Keep this page open
+          until file transfers finish; processing then continues on the server.
         </p>
         <div id="controls">
-          <button data-action="start">Start / Resume</button
+          <button data-action="resume" id="resume" hidden>
+            Continue paused queue</button
           ><button data-action="pause">Pause</button
           ><button data-action="retry">Retry failed</button
           ><button data-action="cancel">Cancel pending</button>
@@ -90,7 +86,7 @@
           </table>
         </div>
         <details>
-          <summary>Clean-start verification</summary>
+          <summary>Dataset diagnostics</summary>
           <pre id="verification"></pre>
         </details>
       </section>

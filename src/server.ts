@@ -71,7 +71,13 @@ const appConfigPath = path.resolve(process.env.APP_CONFIG_FILE ?? "data/app-conf
 const googleAuthPath = path.resolve(process.env.GOOGLE_AUTH_FILE ?? "data/google-auth.json");
 const coverageWorkflow = new CoverageWorkflow(path.dirname(storePath), () => store.snapshot.clients, async (client, records, destination, persist) => {
   if (!workspace?.connected) throw new Error('Google is not connected; local import is saved');
-  await workspace.syncCleanCoverage(client, records, destination, persist, coverageWorkflow.state.generation);
+  const config=await readOptionalJson<{coverageDestinations?:Record<string,string|{spreadsheetId:string;tab?:string}>}>(appConfigPath);
+  const normalized=(value:string)=>value.toLowerCase().replace(/[^a-z0-9]/g,'');
+  const identity=store.findClient(client);
+  const approved=Object.entries(config?.coverageDestinations??{}).filter(([name])=>[client,identity?.id,...(identity?.aliases??[])].some(value=>value && normalized(value)===normalized(name)));
+  if(approved.length>1 && new Set(approved.map(([,v])=>JSON.stringify(v))).size>1) throw new Error('Multiple approved coverage destinations for this client; configuration needs attention');
+  const mapping=approved[0]?.[1];
+  await workspace.syncCleanCoverage(client, records, (typeof mapping==='string'?mapping:mapping?.spreadsheetId) || destination, persist, coverageWorkflow.state.generation, typeof mapping==='object'?mapping.tab:undefined);
 });
 if (process.env.VERCEL !== '1') {
   await coverageWorkflow.load({readOnly:reporterPreflightReadOnly});
@@ -142,7 +148,8 @@ async function readOptionalJson<T>(filePath: string): Promise<T | undefined> {
 
 async function persistGoogleWorkspace(): Promise<void> {
   if (!workspace) return;
-  await writePersistentFile(appConfigPath, JSON.stringify({ rootFolderId: workspace.rootFolderId }));
+  const config=await readOptionalJson<Record<string,unknown>>(appConfigPath)??{};
+  await writePersistentFile(appConfigPath, JSON.stringify({ ...config, rootFolderId: workspace.rootFolderId }));
   await writePersistentFile(googleAuthPath, JSON.stringify(workspace.connected ? workspace.credentials : {}));
 }
 
@@ -200,7 +207,7 @@ app.use((request, response, next) => {
   if (request.path.startsWith('/api/clean-coverage') && process.env.VERCEL === '1') return response.status(503).json({error:'The overnight queue requires the durable local Node server. Serverless processing is disabled.'});
   next();
 });
-app.get('/api/clean-coverage', (_request,response) => response.json({...coverageWorkflow.state,verification:coverageWorkflow.verification()}));
+app.get('/api/clean-coverage', (_request,response) => response.json({...coverageWorkflow.state,summary:coverageWorkflow.summary(),verification:coverageWorkflow.verification()}));
 app.post('/api/clean-coverage/upload', upload.array('files', 500), async (request,response) => {
   try {
     const jobs=[], rejectedFiles=[];

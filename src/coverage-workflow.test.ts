@@ -120,7 +120,11 @@ assert.equal(queue.state.jobs[1].imported, 0);
 assert.equal(queue.state.jobs[0].state, "completed");
 assert.equal(queue.state.destinations.acme, "destination");
 await queue.tick();
-assert.equal(syncCalls, 2);
+assert.equal(
+  syncCalls,
+  1,
+  "Identical files reuse the verified client dataset without another Google write",
+);
 const workbook = await writeXlsx([
   {
     sheet: "2025 Coverage",
@@ -156,10 +160,13 @@ const fail = new CoverageWorkflow(directory, clients, async () => {
   throw Error("temporary");
 });
 await fail.load();
+fail.state.syncedSignatures = {};
 await fail.enqueue(csv, "Acme PRCC retry.csv");
 await fail.tick();
 assert.equal(fail.state.jobs.at(-1)?.state, "pending");
 assert.equal(fail.state.records.length, 2);
+fail.state.jobs.at(-1)!.nextAttemptAt = 0;
+await fail.save();
 queue = new CoverageWorkflow(directory, clients, sync);
 await queue.load();
 await queue.tick();
@@ -182,6 +189,12 @@ let saved = "";
 transport.drive = {
   files: {
     list: async () => ({ data: { files: [] } }),
+    get: async () => ({
+      data: {
+        mimeType: "application/vnd.google-apps.spreadsheet",
+        capabilities: { canEdit: true },
+      },
+    }),
     create: async () => {
       creates++;
       return { data: { id: "new" } };
@@ -190,6 +203,7 @@ transport.drive = {
 };
 let resizeCalls = 0;
 const batchSizes: number[] = [];
+const ranges = new Map<string, any[][]>();
 transport.sheets = {
   spreadsheets: {
     get: async () => ({
@@ -198,7 +212,7 @@ transport.sheets = {
           {
             properties: {
               sheetId: 0,
-              title: "Sheet1",
+              title: "Coverage",
               gridProperties: { rowCount: 1, columnCount: 11 },
             },
           },
@@ -207,13 +221,39 @@ transport.sheets = {
     }),
     batchUpdate: async () => {
       resizeCalls++;
+      return {
+        data: {
+          replies: [
+            {
+              addSheet: {
+                properties: {
+                  sheetId: 5,
+                  title: "Coverage",
+                  gridProperties: { rowCount: 1000, columnCount: 11 },
+                },
+              },
+            },
+          ],
+        },
+      };
     },
     values: {
       update: async (r: any) => {
         written = r.requestBody.values;
+        ranges.set(`${r.spreadsheetId}:${r.range}`, r.requestBody.values);
         batchSizes.push(r.requestBody.values.length);
       },
-      get: async () => ({ data: { values: written } }),
+      get: async (r: any) => {
+        let values = ranges.get(`${r.spreadsheetId}:${r.range}`);
+        if (!values && r.range.endsWith("!A1:K1"))
+          values = [...ranges.entries()]
+            .find(
+              ([k]) =>
+                k.startsWith(`${r.spreadsheetId}:`) && k.includes("!A1:"),
+            )?.[1]
+            ?.slice(0, 1);
+        return { data: { values: values ?? [] } };
+      },
     },
   },
 };
@@ -256,6 +296,100 @@ assert.deepEqual(
   [500, 500, 2],
   "Large client sheets are expanded and written in bounded batches",
 );
+batchSizes.length = 0;
+await google.syncCleanCoverage(
+  "Acme",
+  Array.from({ length: 1001 }, () => queue.state.records[0]),
+  "existing",
+  async () => {},
+  "fixture",
+);
+assert.equal(
+  batchSizes.length,
+  0,
+  "Retrying a fully written sheet verifies existing batches without rewriting",
+);
+transport.drive.files.list = async () => ({ data: { files: [{ id: "new" }] } });
+await google.syncCleanCoverage(
+  "Acme",
+  queue.state.records,
+  undefined,
+  async (id) => {
+    saved = id;
+  },
+  "fixture",
+);
+assert.equal(
+  creates,
+  1,
+  "Destination discovery reuses the client spreadsheet after a lost create response",
+);
+transport.drive.files.get = async () => {
+  throw { code: 404 };
+};
+await google.syncCleanCoverage(
+  "Acme",
+  queue.state.records,
+  "deleted",
+  async (id) => {
+    saved = id;
+  },
+  "fixture",
+);
+assert.equal(
+  saved,
+  "new",
+  "A deleted approved destination resolves to the existing dedicated sheet",
+);
+assert.equal(creates, 1);
+transport.drive.files.get = async () => ({
+  data: {
+    mimeType: "application/vnd.google-apps.spreadsheet",
+    capabilities: { canEdit: true },
+  },
+});
+transport.sheets.spreadsheets.get = async () => ({
+  data: {
+    sheets: [
+      {
+        properties: {
+          sheetId: 9,
+          title: "Unrelated dashboard",
+          gridProperties: { rowCount: 1000, columnCount: 11 },
+        },
+      },
+    ],
+  },
+});
+await google.syncCleanCoverage(
+  "Acme",
+  queue.state.records,
+  "approved-multi-tab",
+  async () => {},
+  "fixture",
+);
+assert.ok(
+  [...ranges.keys()]
+    .filter((k) => k.startsWith("approved-multi-tab:"))
+    .every((k) => k.includes("'Coverage'!")),
+  "Approved spreadsheets use a coverage tab without touching unrelated tabs",
+);
+transport.sheets.spreadsheets.get = async () => ({
+  data: {
+    sheets: [
+      {
+        properties: {
+          sheetId: 5,
+          title: "Coverage",
+          gridProperties: { rowCount: 1000, columnCount: 11 },
+        },
+      },
+    ],
+  },
+});
+transport.drive.files.get=async()=>({data:{name:'Master Reporter List',mimeType:'application/vnd.google-apps.spreadsheet'}});
+await assert.rejects(google.syncCleanCoverage('Acme',queue.state.records,'master',async()=>{},'fixture'),/cannot be coverage destinations/);
+transport.drive.files.get=async()=>({data:{mimeType:'application/vnd.google-apps.spreadsheet',capabilities:{canEdit:true}}});
 transport.sheets.spreadsheets.values.get = async () => ({
   data: { values: [] },
 });
