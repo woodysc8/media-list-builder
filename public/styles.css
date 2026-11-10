@@ -293,3 +293,5 @@ tr.approved { background: rgba(0, 174, 239, .08); }
   html { scroll-behavior: auto; }
   *, *::before, *::after { transition-duration: .01ms !important; }
 }
+/* Legacy coverage entry controls are retired; the dedicated workspace owns uploads. */
+article:has(#ingest-form), .sync-action:has(#sync-local-button), #results { display: none !important; }

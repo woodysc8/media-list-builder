@@ -5,18 +5,15 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 
-import { ingest } from "./ingestion.js";
-import { migrateCoverageFromSources } from "./coverage-migration.js";
+import { CoverageWorkflow } from "./coverage-workflow.js";
+import { acquireCoverageLock } from './coverage-lock.js';
 import { configuredGoogleRedirectUri, GoogleWorkspace } from "./google.ts";
-import { parseInput } from "./parser.js";
 import { StructuredStore } from "./store.js";
 import { ReporterEnrichmentService } from "./enrichment.js";
-import { normalizeReporterType, type ContactRecord, type ExtractedCoverage, type ReporterRecord, type ReporterStatus } from "./domain.js";
+import { normalizeReporterType, type ContactRecord, type ReporterRecord, type ReporterStatus } from "./domain.js";
 import { CANONICAL_BEATS } from "../public/canonical-beats.js";
 import { normalizeName } from "./normalize.js";
 import { resolveReporter } from "./coverage-resolvers.js";
-import { selectCoverageUrlResolutionRecords } from "./url-enrichment.js";
-import { expectedOutletDomainsFor } from "./outlet-domain-matching.js";
 import { diagnoseOptoUnresolvedOutletDomains } from "./outlet-domain-diagnostic.js";
 import { runReadOnlyReporterPreflight } from "./reporter-preflight.js";
 import { loadReporterDirectorySnapshot } from "./reporter-directory-source.js";
@@ -46,20 +43,18 @@ const storePath = path.resolve(
   process.env.DATA_FILE ?? "data/store.json"
 );
 const reporterPreflightReadOnly = process.env.REPORTER_PREFLIGHT_READ_ONLY === "1";
+if(process.env.VERCEL!=='1' && process.argv[1] && path.resolve(process.argv[1])===fileURLToPath(import.meta.url)) await acquireCoverageLock(path.dirname(storePath));
 
 console.log("[STORE] DATA_FILE:", process.env.DATA_FILE ?? "(default data/store.json)");
 console.log("[STORE] RESOLVED STORE PATH:", storePath);
 console.log("[STORE] CURRENT WORKING DIRECTORY:", process.cwd());
 
-const store = new StructuredStore(storePath);
+const store = new StructuredStore(storePath, true);
 await store.load({ readOnly: reporterPreflightReadOnly });
 if (reporterPreflightReadOnly) {
   console.log("[STORE] Read-only reporter preflight mode: startup cleanup and Coverage migration skipped");
 } else {
-  const duplicateCleanup = await store.deduplicateCoverage();
-  console.log("[STORE] Coverage duplicate cleanup:", duplicateCleanup);
-  const migration = await migrateCoverageFromSources(store, storePath);
-  console.log("[MIGRATION] Coverage sources:", migration);
+  console.log('[COVERAGE] Historical migrations disabled. Using isolated coverage-v2 state.');
 }
 
 const enrichment = new ReporterEnrichmentService(
@@ -74,6 +69,17 @@ let workspace: GoogleWorkspace | undefined;
 let reportersHydrated = false;
 const appConfigPath = path.resolve(process.env.APP_CONFIG_FILE ?? "data/app-config.json");
 const googleAuthPath = path.resolve(process.env.GOOGLE_AUTH_FILE ?? "data/google-auth.json");
+const coverageWorkflow = new CoverageWorkflow(path.dirname(storePath), () => store.snapshot.clients, async (client, records, destination, persist) => {
+  if (!workspace?.connected) throw new Error('Google is not connected; local import is saved');
+  await workspace.syncCleanCoverage(client, records, destination, persist, coverageWorkflow.state.generation);
+});
+if (process.env.VERCEL !== '1') {
+  await coverageWorkflow.load({readOnly:reporterPreflightReadOnly});
+  if(!reporterPreflightReadOnly) {
+    const worker = setInterval(() => { void coverageWorkflow.tick().catch(error => console.error('[COVERAGE QUEUE]', error)); }, 1000);
+    worker.unref();
+  }
+}
 const GOOGLE_STATE_COOKIE = "mlb_oauth_state";
 const APP_SESSION_COOKIE = "mlb_app_session";
 
@@ -185,6 +191,37 @@ app.use(async (_request, response, next) => {
   }
 });
 app.use(express.static(path.resolve(__dirname, "../public")));
+// Retired ingestion and reconciliation routes cannot introduce historical data.
+app.use((request, response, next) => {
+  if(reporterPreflightReadOnly && request.method!=='GET' && request.path.startsWith('/api/clean-coverage')) return response.status(403).json({error:'Coverage writes are disabled in read-only mode'});
+  if (request.method !== 'GET' && (request.path === '/api/ingest' || request.path === '/api/sync/local' || request.path.startsWith('/api/coverage'))) {
+    return response.status(410).json({error:'Use the corrected PRCC upload queue at /api/clean-coverage'});
+  }
+  if (request.path.startsWith('/api/clean-coverage') && process.env.VERCEL === '1') return response.status(503).json({error:'The overnight queue requires the durable local Node server. Serverless processing is disabled.'});
+  next();
+});
+app.get('/api/clean-coverage', (_request,response) => response.json({...coverageWorkflow.state,verification:coverageWorkflow.verification()}));
+app.post('/api/clean-coverage/upload', upload.array('files', 500), async (request,response) => {
+  try {
+    const jobs=[], rejectedFiles=[];
+    for(const file of (request.files as Express.Multer.File[] ?? [])) {
+      try {
+        const job=await coverageWorkflow.enqueue(file.buffer,file.originalname,String(request.body.client??''));
+        if(job.records.length) {
+          const client=store.ensureClient(job.client);
+          for(const record of job.records) record.clientId=client.id;
+          await store.save(); await coverageWorkflow.save();
+        }
+        jobs.push(job);
+      } catch(error) { rejectedFiles.push({file:file.originalname,error:error instanceof Error?error.message:String(error)}); }
+    }
+    response.json({jobs,rejectedFiles});
+  } catch(error) {response.status(400).json({error:error instanceof Error?error.message:String(error)});}
+});
+app.post('/api/clean-coverage/control', async (request,response) => {
+  try {await coverageWorkflow.control(String(request.body.action));response.json({paused:coverageWorkflow.state.paused});}
+  catch(error) {response.status(400).json({error:String(error)});}
+});
 
 // Diagnostic mode keeps existing mutations blocked, with a narrow exception for
 // creating an explicitly requested, new media-list spreadsheet.
@@ -223,7 +260,7 @@ function extractFolderId(value: string): string {
 }
 
 function getAllLocalRecords() {
-  return store.snapshot.coverage;
+  return coverageWorkflow.state.records;
 }
 
 function getAllLocalReporters() {
@@ -242,7 +279,7 @@ async function persistReporterSync(result: Awaited<ReturnType<GoogleWorkspace["s
 function defaultLocalClientName(): string {
   const snapshot = store.snapshot;
   return snapshot.clients.find((client) =>
-    snapshot.coverage.some((record) => normalizedClientName(record.clientName) === normalizedClientName(client.name))
+    getAllLocalRecords().some((record) => normalizedClientName(record.clientName) === normalizedClientName(client.name))
   )?.name ?? "";
 }
 
@@ -287,35 +324,6 @@ function contactIdentity(contact: Pick<ContactRecord, "clientName" | "name" | "t
     .join("|");
 }
 
-async function resolveAndPersistCoverageUrls(records: ReturnType<typeof getAllLocalRecords>) {
-  if (!enrichment.canResolveCoverageUrls || !records.length) return [];
-  const outletDomainsByName = new Map<string, string[]>();
-  const masterOutlets = await getMasterOutlets();
-  for (const record of records) {
-    const domains = expectedOutletDomainsFor(record.outlet, masterOutlets);
-    if (domains.length) {
-      outletDomainsByName.set(normalizeName(record.outlet), domains);
-    }
-  }
-  const resolutions = await enrichment.resolveCoverageUrls(records, outletDomainsByName);
-  const byId = new Map(store.snapshot.coverage.map((record) => [record.id, record]));
-  let changed = false;
-  for (const resolution of resolutions) {
-    const record = byId.get(resolution.coverageId);
-    if (!record || resolution.outcome === "manual" || resolution.outcome === "prcc") continue;
-    const now = new Date().toISOString();
-    const next = resolution.outcome === "verified" || resolution.outcome === "candidate"
-      ? { ...record, articleUrl: resolution.articleUrl, urlSource: "resolved" as const, urlConfidence: resolution.confidence, urlResolvedAt: now, urlResolutionEvidence: resolution.evidence, updatedAt: now }
-      : { ...record, articleUrl: "", urlSource: null, urlConfidence: "unresolved" as const, urlResolvedAt: null, urlResolutionEvidence: resolution.evidence, updatedAt: now };
-    if (JSON.stringify(next) !== JSON.stringify(record)) {
-      store.updateCoverage(next);
-      changed = true;
-    }
-  }
-  if (changed) await store.save();
-  return resolutions;
-}
-
 function normalizedOutletName(value: string): string {
   return value.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
 }
@@ -326,7 +334,7 @@ function normalizedClientName(value: string): string {
 
 async function buildCoverageReport(clientName: string) {
   const snapshot = store.snapshot;
-  const clientCoverage = snapshot.coverage.filter((record) =>
+  const clientCoverage = getAllLocalRecords().filter((record) =>
     normalizedClientName(record.clientName) === normalizedClientName(clientName)
   );
   const outlets = await getMasterOutlets();
@@ -512,7 +520,7 @@ app.post("/api/migrations/canonical-beats", async (request, response) => {
 
 app.get("/api/coverage-data", (_request, response) => {
   try {
-    return response.json({ coverage: store.snapshot.coverage });
+    return response.json({ coverage: coverageWorkflow.state.records });
   } catch (error) {
     return response.status(500).json({
       error: error instanceof Error ? error.message : "Unable to load coverage data"
@@ -578,55 +586,6 @@ app.delete("/api/contacts/:kind/:id", async (request, response) => {
     return response.status(400).json({ error: error instanceof Error ? error.message : "Unable to delete contact" });
   }
 });
-
-app.post("/api/coverage", async (request, response) => {
-  try {
-    const body = request.body ?? {};
-    const reporter = store.snapshot.reporters.find((item) => item.id === String(body.reporterId ?? ""));
-    const outlets = await getMasterOutlets();
-    const outlet = outlets.find((item) => normalizedOutletName(item.name) === normalizedOutletName(String(body.outlet ?? "")));
-    const outletName = outlet?.name ?? String(body.outlet ?? "").trim();
-    if (!outletName) throw new Error("Media Outlet is required");
-    if (body.reporterId && !reporter) throw new Error("Selected reporter was not found in the Reporter Master List");
-
-    const item: ExtractedCoverage = {
-      clientName: String(body.client ?? "").trim(),
-      reporterName: reporter ? `${reporter.firstName} ${reporter.lastName}`.trim() : "",
-      outlet: outletName,
-      publicationDate: String(body.date ?? "").trim(),
-      articleTitle: String(body.title ?? "").trim(),
-      articleUrl: String(body.url ?? "").trim(),
-      spokesperson: String(body.spokesperson ?? "").trim(),
-      originalPressType: String(body.pressType ?? "").trim(),
-      coverageType: String(body.coverageType ?? "").trim(),
-      sentiment: String(body.sentiment ?? "").trim(),
-      status: String(body.status ?? "").trim(),
-      reach: typeof body.reach === "number" ? body.reach : null,
-      rawFields: Object.fromEntries(
-        Object.entries(body).map(([key, value]) => [key, String(value ?? "")])
-      )
-    };
-    if (!item.clientName || !item.articleTitle) throw new Error("Client and title are required");
-    const result = await ingest(
-      [item],
-      "PRCC",
-      "manual PRCC entry",
-      store,
-      { outlets: await getMasterOutlets(), urlSource: "manual" }
-    );
-    return response.json({
-      ...result,
-      coverageAdded: result.records.length - result.coverageUpdated,
-      coverageUpdated: result.coverageUpdated
-    });
-  } catch (error) {
-    return response.status(400).json({ error: error instanceof Error ? error.message : "Coverage entry failed" });
-  }
-});
-
-/* ============================================================
-   GOOGLE CONFIG
-============================================================ */
 
 app.post("/api/config", async (request, response) => {
   const rootFolderId = extractFolderId(
@@ -890,104 +849,6 @@ app.get(
    SYNC ALL LOCAL RECORDS TO GOOGLE
 ============================================================ */
 
-app.post(
-  "/api/sync/local",
-  async (request, response) => {
-    if (!workspace?.connected) {
-      return response.status(400).json({
-        error:
-          "Google workspace is not connected"
-      });
-    }
-
-    try {
-      const requestedClients: string[] = Array.isArray(
-        request.body?.clients
-      )
-        ? request.body.clients
-            .map((value: unknown) =>
-              String(value ?? "").trim()
-            )
-            .filter(Boolean)
-        : [];
-
-      const records =
-        requestedClients.length > 0
-          ? getAllLocalRecords().filter(
-              (record) =>
-                requestedClients.some(
-                  (client) =>
-                    normalizeName(client) ===
-                    normalizeName(
-                      record.clientName
-                    )
-                )
-            )
-          : getAllLocalRecords();
-
-      const reporters = await store.prepareCurrentReporters();
-
-      console.log(
-        `[SYNC] Starting full local sync: ${records.length} coverage records, ${reporters.length} reporters`
-      );
-
-      const coverage =
-        await workspace.syncLocalRecords(records, {
-          clientContacts: store.snapshot.clientContacts,
-          teamContacts: store.snapshot.teamContacts
-        });
-
-      const rawReporterSync = await workspace.syncRawReporterStaging(reporters);
-
-      const reportersSync =
-        await workspace.syncMasterReporterList(
-          reporters,
-          { archivedReporters: store.snapshot.archivedReporters }
-        );
-      const reporterSyncSummary = await persistReporterSync(reportersSync);
-
-      console.log("[SYNC] Complete", {
-        clients: coverage.clients.length,
-        coverageAdded:
-          coverage.totalAddedCoverageRows,
-        coverageSkipped:
-          coverage.totalSkippedCoverageRows,
-        reportersAdded:
-          reporterSyncSummary.addedReporterRows,
-        reportersUpdated:
-          reporterSyncSummary.updatedReporterRows,
-        reportersSkipped:
-          reporterSyncSummary.skippedReporterRows
-      });
-
-      return response.json({
-        localRecordsConsidered:
-          records.length,
-        clientsSynced: coverage.clients,
-        addedCoverageRows:
-          coverage.totalAddedCoverageRows,
-        skippedCoverageRows:
-          coverage.totalSkippedCoverageRows,
-        reporterSync: reporterSyncSummary,
-        rawReporterSync,
-        debug: coverage.debug
-      });
-    } catch (error) {
-      console.error(
-        "[SYNC] Full sync failed:",
-        error
-      );
-
-      return response.status(502).json({
-        error:
-          error instanceof Error
-            ? error.message
-            : "Local record sync failed"
-      });
-    }
-  }
-);
-
 /* ============================================================
    POPULATE ALL REPORTERS
 ============================================================ */
@@ -1135,7 +996,7 @@ app.post(
 
       const records =
         selectedClients.length > 0
-          ? snapshot.coverage.filter(
+          ? getAllLocalRecords().filter(
               (record) =>
                 selectedClients.some(
                   (client) =>
@@ -1145,7 +1006,7 @@ app.post(
                     )
                 )
             )
-          : snapshot.coverage;
+          : getAllLocalRecords();
 
       const result =
         await enrichment.run(
@@ -1249,7 +1110,7 @@ app.post(
           clientsCovered: (() => {
             const clients = [
               ...new Set(
-                store.snapshot.coverage
+                getAllLocalRecords()
                   .filter(
                     (record) =>
                       normalizeName(record.outlet) === normalizeName(proposal.outlet) &&
@@ -1334,158 +1195,6 @@ app.post(
   }
 );
 
-app.post("/api/coverage/resolve-urls", async (request, response) => {
-  try {
-    if (!enrichment.canResolveCoverageUrls) {
-      return response.status(503).json({ error: "URL resolution requires the existing SEARCH_API_KEY configuration" });
-    }
-    const ids = Array.isArray(request.body?.ids) ? request.body.ids.map((id: unknown) => String(id)) : [];
-    const clients = Array.isArray(request.body?.clients) ? request.body.clients.map((client: unknown) => normalizeName(String(client))) : [];
-    if (!ids.length && !clients.length) {
-      return response.status(400).json({ error: "Provide one or more coverage ids or clients; URL repair is intentionally bounded" });
-    }
-    const limit = Math.min(Math.max(Number(request.body?.limit ?? 10), 1), 25);
-    const records = selectCoverageUrlResolutionRecords(store.snapshot.coverage, ids, clients, limit);
-    const resolutions = await resolveAndPersistCoverageUrls(records);
-    return response.json({ considered: records.length, resolutions });
-  } catch (error) {
-    return response.status(502).json({
-      error: error instanceof Error ? error.message : "Coverage URL resolution failed"
-    });
-  }
-});
-
-/* ============================================================
-   INGEST
-============================================================ */
-
-app.post(
-  "/api/ingest",
-  upload.single("file"),
-  async (request, response) => {
-    try {
-      if (!request.file) {
-        return response.status(400).json({
-          error: "Choose a PRCC file"
-        });
-      }
-
-      console.log(
-        `[PARSER] Receiving ${request.file.originalname}`
-      );
-
-      const parsed = parseInput(
-        request.file.buffer.toString(
-          "utf8"
-        ),
-        request.file.originalname
-      );
-
-      console.log(
-        `[PARSER] Parsed ${parsed.items.length} items`
-      );
-
-      const result = await ingest(
-        parsed.items,
-        parsed.source,
-        request.file.originalname,
-        store,
-        { outlets: await getMasterOutlets() }
-      );
-
-      // URL lookup is a bounded post-ingestion operation on only the records
-      // just imported. It never runs from Google synchronization.
-      let urlResolutions: Awaited<ReturnType<typeof resolveAndPersistCoverageUrls>> = [];
-      try {
-        urlResolutions = await resolveAndPersistCoverageUrls(
-          result.records.filter((record) => !record.articleUrl && record.urlSource !== "manual")
-        );
-      } catch (error) {
-        console.error("[URL RESOLUTION] Newly imported records remain unresolved:", error);
-      }
-
-      /*
-       * IMPORTANT:
-       *
-       * If an item is already in the local store, ingest() correctly
-       * returns it as a duplicate. We DO NOT treat that as an error.
-       *
-       * Existing records can still be synchronized to Google separately
-       * through /api/sync/local.
-       */
-
-      let coverageSync = null;
-      let reporterSync = null;
-
-      if (workspace?.connected) {
-        if (result.records.length) {
-          coverageSync =
-            await workspace.syncLocalRecords(
-              store.snapshot.coverage,
-              {
-                clientContacts: store.snapshot.clientContacts,
-                teamContacts: store.snapshot.teamContacts
-              }
-            );
-        }
-
-        const reporterIdsToStage = new Set([
-          ...result.discoveredReporterIds,
-          ...result.records.map((record) => record.reporterId ?? "").filter(Boolean)
-        ]);
-        if (reporterIdsToStage.size) {
-          const currentReporters = await store.prepareCurrentReporters();
-          const snapshot = store.snapshot;
-          const reportersToStage = [...snapshot.reporters, ...snapshot.archivedReporters]
-            .filter((reporter) => reporterIdsToStage.has(reporter.id));
-          const rawSync = await workspace.syncRawReporterStaging(reportersToStage);
-          const canonicalSync = await workspace.syncMasterReporterList(currentReporters, {
-            archivedReporters: snapshot.archivedReporters,
-            addUnlisted: false
-          });
-          const canonicalSummary = await persistReporterSync(canonicalSync);
-          reporterSync = { ...canonicalSummary, rawReporterSync: rawSync };
-        }
-      }
-
-      console.log(
-        `[INGEST] Parsed=${parsed.items.length} Added=${result.records.length} Duplicates=${result.duplicates.length} Review=${result.reviewRequired.length}`
-      );
-
-      return response.json({
-        ...result,
-        parsed:
-          parsed.items.length,
-        coverageAdded:
-          result.records.length - result.coverageUpdated,
-        coverageUpdated:
-          result.coverageUpdated,
-        coverageDuplicates:
-          result.duplicates.length,
-        urlResolutions,
-        googleCoverageSync:
-          coverageSync,
-        googleReporterSync:
-          reporterSync,
-        syncedToGoogle:
-          Boolean(workspace?.connected)
-      });
-    } catch (error) {
-      console.error(
-        "[INGEST] Failed:",
-        error
-      );
-
-      return response.status(400).json({
-        error:
-          error instanceof Error
-            ? error.message
-            : "Ingestion failed"
-      });
-    }
-  }
-);
-
 /* ============================================================
    FRONTEND FALLBACK
 ============================================================ */
@@ -1508,7 +1217,8 @@ export default app;
 const invokedFile = process.argv[1] ? path.resolve(process.argv[1]) : "";
 if (invokedFile === fileURLToPath(import.meta.url)) {
   const port = Number(process.env.PORT ?? 3001);
-  app.listen(port, () => {
-    console.log(`Media List Builder running at http://localhost:${port}`);
+  const httpServer = app.listen(port, () => {
+    const address=httpServer.address();
+    console.log(`Media List Builder running at http://localhost:${typeof address==='object'&&address?address.port:port}`);
   });
 }

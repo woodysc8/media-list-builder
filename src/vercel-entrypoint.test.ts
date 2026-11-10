@@ -1,5 +1,14 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import os from 'node:os';
+import path from 'node:path';
+
+// Always use disposable data, including when the test imports the local server.
+const fixture=fs.mkdtempSync(path.join(os.tmpdir(),'media-entrypoint-'));
+process.env.DATA_FILE=path.join(fixture,'store.json');
+process.env.APP_CONFIG_FILE=path.join(fixture,'app-config.json');
+process.env.GOOGLE_AUTH_FILE=path.join(fixture,'google-auth.json');
+fs.writeFileSync(process.env.DATA_FILE,JSON.stringify({clients:[],reporters:[],coverage:[]}));
 
 process.env.REPORTER_PREFLIGHT_READ_ONLY = "1";
 process.env.APP_ACCESS_PASSWORD = "test-only-access-password";

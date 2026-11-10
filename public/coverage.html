@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Coverage · Media List Builder</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <style>
+      input,
+      select {
+        margin: 8px;
+      }
+      td,
+      th {
+        padding: 10px;
+        text-align: left;
+      }
+      .queue-drop {
+        border: 2px dashed #777;
+        padding: 24px;
+      }
+      pre {
+        white-space: pre-wrap;
+      }
+      button {
+        margin: 5px;
+      }
+      a {
+        color: inherit;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <header>
+        <a href="/">← Media List Builder</a>
+        <h1>Coverage</h1>
+        <p>
+          Upload corrected PRCC files. Original article URLs are required.
+          Processing continues while this page is closed.
+        </p>
+      </header>
+      <div id="message" role="status"></div>
+      <section class="results">
+        <h2>Upload Queue</h2>
+        <form id="upload">
+          <div class="queue-drop" id="drop">
+            <label
+              >Select or drop CSV / XLSX files
+              <input
+                id="files"
+                type="file"
+                multiple
+                accept=".csv,.xlsx"
+                required
+            /></label>
+          </div>
+          <label
+            >Client override (optional)
+            <input
+              id="client"
+              placeholder="Otherwise detected from filename" /></label
+          ><button>Upload and preview</button>
+        </form>
+        <p>
+          Review detected clients, accepted rows and row errors before starting.
+          Pause stops after the current file. Retry preserves successful local
+          imports.
+        </p>
+        <div id="controls">
+          <button data-action="start">Start / Resume</button
+          ><button data-action="pause">Pause</button
+          ><button data-action="retry">Retry failed</button
+          ><button data-action="cancel">Cancel pending</button>
+        </div>
+        <p id="summary"></p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>File / year</th>
+                <th>Client</th>
+                <th>Queue</th>
+                <th>Local import</th>
+                <th>Google</th>
+                <th>Validation / errors</th>
+              </tr>
+            </thead>
+            <tbody id="jobs"></tbody>
+          </table>
+        </div>
+        <details>
+          <summary>Clean-start verification</summary>
+          <pre id="verification"></pre>
+        </details>
+      </section>
+      <section class="results">
+        <h2>Coverage Library</h2>
+        <div id="filters">
+          <input
+            id="filter-client"
+            placeholder="Client"
+            aria-label="Filter client"
+          /><input
+            id="filter-outlet"
+            placeholder="Publication"
+            aria-label="Filter publication"
+          /><input
+            id="filter-reporter"
+            placeholder="Reporter"
+            aria-label="Filter reporter"
+          /><label>From <input id="from" type="date" /></label
+          ><label>To <input id="to" type="date" /></label
+          ><button id="export">Export filtered CSV</button>
+        </div>
+        <p id="library-summary"></p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Title</th>
+                <th>Client</th>
+                <th>Publication</th>
+                <th>Reporter</th>
+                <th>Original URL</th>
+                <th>Google</th>
+              </tr>
+            </thead>
+            <tbody id="records"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="/coverage.js"></script>
+  </body>
+</html>

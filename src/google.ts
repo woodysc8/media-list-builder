@@ -175,6 +175,38 @@ interface ReporterOutletSnapshot {
 }
 
 export class GoogleWorkspace {
+  /** Writes only the dedicated clean-rebuild destination; never reads legacy coverage. */
+  async syncCleanCoverage(client: string, records: import('./domain.js').CoverageRecord[], destination: string | undefined, persist: (id: string) => Promise<void>, generation: string) {
+    if (!this.connected) throw new Error('Google is not connected; local import is saved');
+    if (!destination) {
+      // Stable app property recovers a create whose response was lost without duplicating a sheet.
+      const marker = `coverage-v2:${generation}:${client.toLowerCase().replace(/[^a-z0-9]/g,'')}`;
+      const escaped = marker.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+      const found = await this.drive.files.list({q:`trashed = false and appProperties has { key='coverageRebuild' and value='${escaped}' }`,fields:'files(id)'});
+      destination = found.data.files?.[0]?.id ?? undefined;
+      if (!destination) {
+        const created = await this.drive.files.create({requestBody:{name:`${client} - Clean Coverage`,mimeType:'application/vnd.google-apps.spreadsheet',parents:[this.rootFolderId],appProperties:{coverageRebuild:marker}},fields:'id'});
+        destination = created.data.id!;
+      }
+      await persist(destination);
+    }
+    const rows: (string|number)[][] = [['Date','Title','Client','Media Outlet','Reporter','Spokespersons ID','Coverage Type','Sentiment','Status','Reach','URL'], ...records.map(r=>[r.publicationDate,r.articleTitle,r.clientName,r.outlet,r.reporterName,r.spokesperson,r.originalPressType||r.coverageType,r.sentiment,r.status,r.reach??'',r.articleUrl])];
+    const metadata=await this.sheets.spreadsheets.get({spreadsheetId:destination,fields:'sheets(properties(sheetId,title,gridProperties))'});
+    const tab=metadata.data.sheets?.[0]?.properties;
+    if(!tab || tab.sheetId===undefined || !tab.title) throw new Error('Coverage destination has no writable worksheet');
+    if((tab.gridProperties?.rowCount??0)<rows.length || (tab.gridProperties?.columnCount??0)<11) {
+      await this.sheets.spreadsheets.batchUpdate({spreadsheetId:destination,requestBody:{requests:[{updateSheetProperties:{properties:{sheetId:tab.sheetId,gridProperties:{rowCount:Math.max(rows.length,tab.gridProperties?.rowCount??1000),columnCount:Math.max(11,tab.gridProperties?.columnCount??26)}},fields:'gridProperties(rowCount,columnCount)'}}]}});
+    }
+    const sheetName=`'${tab.title.replaceAll("'","''")}'`;
+    for(let start=0;start<rows.length;start+=500) {
+      const values=rows.slice(start,start+500);
+      const range=`${sheetName}!A${start+1}:K${start+values.length}`;
+      await this.sheets.spreadsheets.values.update({spreadsheetId:destination,range,valueInputOption:'RAW',requestBody:{values}});
+      const check=await this.sheets.spreadsheets.values.get({spreadsheetId:destination,range,valueRenderOption:'UNFORMATTED_VALUE'});
+      if(JSON.stringify(check.data.values)!==JSON.stringify(values)) throw new Error('Google coverage write verification failed');
+      await new Promise(resolve=>setTimeout(resolve,1100));
+    }
+  }
   private readonly oauth: InstanceType<typeof google.auth.OAuth2>;
   readonly redirectUri: string;
 

@@ -120,3 +120,6 @@ Enable Google Drive API and Google Sheets API. The authorized account needs acce
 npm test
 npm run build
 ```
+# Coverage clean rebuild
+
+Use the **Coverage** link for corrected CSV/XLSX PRCC uploads. The current workflow, storage audit, safe reset command and verification instructions are in [COVERAGE-CLEAN-REBUILD.md](COVERAGE-CLEAN-REBUILD.md). Those instructions replace the legacy coverage ingestion/synchronization instructions elsewhere in this README. The reset is an explicit operator action and has not been run on live data.

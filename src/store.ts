@@ -95,8 +95,9 @@ function coverageRichness(record: CoverageRecord): number {
 
 export class StructuredStore {
   private data: StoreData = structuredClone(emptyStore);
+  private retainedHistoricalCoverage: CoverageRecord[] = [];
 
-  constructor(private readonly filePath: string) {}
+  constructor(private readonly filePath: string, private readonly isolateCoverage = false) {}
 
   async load(options: { readOnly?: boolean } = {}): Promise<void> {
     const readOnly = options.readOnly ?? false;
@@ -104,6 +105,12 @@ export class StructuredStore {
       this.data = JSON.parse(
         await readPersistentFile(this.filePath, "utf8")
       ) as StoreData;
+      // Preserve the old bytes semantically for explicit reset/backup, but never
+      // normalize, expose, reconcile or use historical coverage in the new app.
+      if (this.isolateCoverage) {
+        this.retainedHistoricalCoverage = this.data.coverage ?? [];
+        this.data.coverage = [];
+      }
       const originalCoverage = JSON.stringify(this.data.coverage ?? []);
 
       this.data.reporters = (this.data.reporters ?? []).map((reporter) => ({
@@ -155,7 +162,7 @@ export class StructuredStore {
       console.log(
         `[STORE] Loaded ${this.data.coverage.length} coverage records, ${this.data.reporters.length} reporters, ${this.data.clients.length} clients`
       );
-      if (!readOnly && JSON.stringify(this.data.coverage) !== originalCoverage) {
+      if (!readOnly && !this.isolateCoverage && JSON.stringify(this.data.coverage) !== originalCoverage) {
         await this.save();
       }
     } catch (error) {
@@ -171,13 +178,15 @@ export class StructuredStore {
   }
 
   get snapshot(): StoreData {
-    return structuredClone(this.data);
+    const snapshot = structuredClone(this.data);
+    if (this.isolateCoverage) snapshot.coverage = [];
+    return snapshot;
   }
 
   async save(): Promise<void> {
     await writePersistentFile(
       this.filePath,
-      JSON.stringify(this.data, null, 2)
+      JSON.stringify(this.isolateCoverage ? {...this.data, coverage:this.retainedHistoricalCoverage} : this.data, null, 2)
     );
 
     console.log(

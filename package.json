@@ -7,6 +7,10 @@
     "node": "22.x"
   },
   "scripts": {
+    "coverage:fresh-start": "tsx src/coverage-fresh-start.ts",
+    "coverage:verify": "tsx src/coverage-verify.ts",
+    "coverage:audit": "tsx src/coverage-audit.ts",
+    "test:coverage": "tsx src/coverage-workflow.test.ts && tsx src/coverage-server.test.ts",
     "dev": "tsx watch src/server.ts",
     "build": "tsc --noEmit",
     "test": "npm run test:media && tsx src/reporter-type.test.ts && tsx src/reporter-directory-source.test.ts && tsx src/google-reporter-tabs.test.ts && tsx src/canonical-beats.test.ts && tsx src/canonical-beat-migration.test.ts && tsx src/google-oauth.test.ts && tsx src/vercel-entrypoint.test.ts && node --test public/reporter-filter.test.js public/filter-selection.test.js",
@@ -23,12 +27,14 @@
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "googleapis": "^140.0.1",
-    "multer": "^1.4.5-lts.1"
+    "multer": "^1.4.5-lts.1",
+    "read-excel-file": "^9.3.14"
   },
   "devDependencies": {
     "@types/express": "^5.0.0",
     "@types/multer": "^1.4.12",
     "tsx": "^4.19.1",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "write-excel-file": "^4.1.1"
   }
 }
