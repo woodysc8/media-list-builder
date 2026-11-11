@@ -4,7 +4,8 @@ import type {
   OutletRecord,
   ContactRecord,
 } from "./domain.js";
-export const WORKBOOK_VERSION = "five-tab-calibri-v2";
+import { validArticleUrl, validCoverageDate } from "./coverage-source.js";
+export const WORKBOOK_VERSION = "five-tab-calibri-lossless-v3";
 export const TEMPLATE_HEADERS = {
   Coverage: [
     "Date",
@@ -110,7 +111,7 @@ export function workbookRows(
   };
   return {
     Coverage: sorted.map((r) => [
-      r.publicationDate,
+      validCoverageDate(r.publicationDate) ? r.publicationDate : "",
       r.articleTitle,
       r.clientName,
       r.outlet,
@@ -120,7 +121,7 @@ export function workbookRows(
       r.sentiment,
       r.status,
       r.reach ?? "",
-      r.articleUrl,
+      validArticleUrl(r.articleUrl) ? r.articleUrl : "",
     ]),
     Reporters: [...reporters.values()],
     Outlets: [...outlets.values()],

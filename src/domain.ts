@@ -281,12 +281,12 @@ export interface CoverageRecord {
   spokesperson: string;
   /** Original PRCC Press Type, retained independently from its normalized classification. */
   originalPressType: string;
-  coverageType: CoverageType;
+  coverageType: CoverageType | "";
   sentiment: string;
-  status: CoverageStatus;
+  status: CoverageStatus | "";
   reach: string | number | null;
   reachSource?: "prcc" | "outlet" | null;
-  outletType: OutletType;
+  outletType: OutletType | "";
   outletTypeConfidence?: "mapped" | "fallback";
 
   rawFields: Record<string, string>;

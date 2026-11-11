@@ -6,7 +6,6 @@ import {
   extractArticleTitle,
   headerKey,
   usableTitle,
-  linkCell,
 } from "./coverage-titles.js";
 import { WORKBOOK_VERSION } from "./coverage-template.js";
 import type {
@@ -14,7 +13,12 @@ import type {
   ClientRecord,
   CoverageDestination,
 } from "./domain.js";
-import { normalizeDate } from "./normalize.js";
+import {
+  parseCoverageSource,
+  incompleteFields,
+  validArticleUrl,
+  type SourceOccurrence,
+} from "./coverage-source.js";
 
 export async function atomicJson(file: string, value: unknown) {
   await mkdir(path.dirname(file), { recursive: true });
@@ -109,6 +113,8 @@ export function coverageSignature(records: CoverageRecord[]) {
     .digest("hex");
 }
 function coverageIdentity(record: CoverageRecord) {
+  if (!validArticleUrl(record.articleUrl) || !record.clientName)
+    return `source|${key(record.clientName)}|${record.sourceFile}|${record.rawFields?.sourceSha256 || record.id}|${record.rawFields?.sourceTab || ""}|${record.rawFields?.sourceRow || record.id}`;
   const url = new URL(record.articleUrl);
   url.hash = "";
   url.searchParams.sort();
@@ -136,6 +142,9 @@ export interface Job {
   error?: string;
   needsAttention?: boolean;
   nextAttemptAt?: number;
+  sourceRows?: number;
+  recoveredRows?: number;
+  recoveryError?: string;
 }
 export interface CoverageState {
   version: 2;
@@ -148,6 +157,8 @@ export interface CoverageState {
   automatic?: boolean;
   deliveries?: Record<string, CoverageDelivery>;
   titleRepairVersion?: number;
+  sourceOccurrences?: SourceOccurrence[];
+  losslessVersion?: number;
   folders?: Record<string, { clientsFolderId: string; clientFolderId: string }>;
 }
 export interface CoverageDelivery {
@@ -209,6 +220,7 @@ export class CoverageWorkflow {
     }
     if (!options.readOnly) {
       await this.repairTitlesFromUploads();
+      await this.recoverSourceRows();
       if (!this.state.deliveries) this.state.paused = false;
       for (const delivery of Object.values(this.state.deliveries ?? {}))
         if (delivery.state === "running") delivery.state = "pending";
@@ -223,19 +235,12 @@ export class CoverageWorkflow {
     return next;
   }
   async enqueue(buffer: Buffer, filename: string, explicitClient = "") {
-    const tables: { tab: string; rows: unknown[][] }[] = [];
-    let parsingError = "";
-    try {
-      tables.push(...(await coverageTables(buffer, filename)));
-    } catch (error) {
-      parsingError = error instanceof Error ? error.message : String(error);
-    }
     const identity = identifyClient(filename, this.clients(), explicitClient);
-    const canonical = identity.client;
+    let occurrences: SourceOccurrence[] = [];
     const job: Job = {
       id: randomUUID(),
       file: path.basename(filename),
-      client: canonical,
+      client: identity.client,
       year: filename.match(/20\d\d/)?.[0] || "",
       state: "pending",
       records: [],
@@ -245,133 +250,35 @@ export class CoverageWorkflow {
       sync: "pending",
       attempts: 0,
     };
-    if (identity.error) {
+    try {
+      const parsed = await parseCoverageSource(
+        buffer,
+        job.file,
+        job.id,
+        job.client,
+        this.clients().find((c) => key(c.name) === key(job.client))?.id ||
+          key(job.client),
+      );
+      job.records = parsed.records;
+      job.year ||=
+        parsed.occurrences
+          .map((o) => o.worksheet.match(/20\d\d/)?.[0])
+          .find(Boolean) || "";
+      job.sourceRows = parsed.occurrences.length;
+      occurrences = parsed.occurrences;
+    } catch (error) {
       job.state = "failed";
+      job.needsAttention = true;
+      job.sync = "not-required";
+      job.error =
+        "Unable to parse " +
+        job.file +
+        ": " +
+        (error instanceof Error ? error.message : String(error));
+    }
+    if (identity.error) {
       job.needsAttention = true;
       job.error = identity.error;
-      job.sync = "not-required";
-    }
-    if (parsingError) {
-      job.state = "failed";
-      job.needsAttention = true;
-      job.sync = "not-required";
-      job.error = `Unable to parse ${job.file}: ${parsingError}`;
-    }
-    for (const { tab, rows } of tables) {
-      job.year ||= tab.match(/20\d\d/)?.[0] || "";
-      const header = rows.findIndex(
-        (r) =>
-          r.some((c) =>
-            [
-              "rawurl",
-              "url",
-              "articleurl",
-              "sourceurl",
-              "coverageurl",
-              "articlelink",
-              "rawarticleurl",
-              "link",
-            ].includes(key(String(c ?? ""))),
-          ) ||
-          (r.some((c) =>
-            ["date", "publicationdate"].includes(key(String(c ?? ""))),
-          ) &&
-            r.some((c) =>
-              ["publication", "outlet", "mediaoutlet"].includes(
-                key(String(c ?? "")),
-              ),
-            )),
-      );
-      if (header < 0) {
-        job.errors.push({
-          file: job.file,
-          tab,
-          row: 1,
-          error: "Missing URL column",
-        });
-        continue;
-      }
-      const headers = rows[header].map((c) => key(String(c ?? "")));
-      for (let i = header + 1; i < rows.length; i++) {
-        if (!rows[i].some((c) => c !== null && c !== "")) continue;
-        const get = (...names: string[]) => {
-          for (const n of names) {
-            const v = rows[i][headers.indexOf(n)];
-            if (v !== null && v !== undefined && v !== "")
-              return v instanceof Date
-                ? v.toISOString().slice(0, 10)
-                : String(v);
-          }
-          return "";
-        };
-        const candidate = get(
-          "rawurl",
-          "rawarticleurl",
-          "articleurl",
-          "url",
-          "articlelink",
-          "sourceurl",
-          "coverageurl",
-        );
-        const url = validUrl(candidate)
-          ? candidate
-          : ["coveragelink", "articlelink", "link", "status"]
-              .map((name) => linkCell(rows[i][headers.indexOf(name)]).url)
-              .find((value) => validUrl(value)) || candidate;
-        if (!canonical) continue;
-        if (!validUrl(url)) {
-          job.errors.push({
-            file: job.file,
-            tab,
-            row: i + 1,
-            error: !canonical
-              ? "Client is required"
-              : "Missing or invalid HTTP/HTTPS article URL",
-          });
-          continue;
-        }
-        const now = new Date().toISOString();
-        const title = extractArticleTitle(
-          Object.fromEntries(
-            headers.map((name, index) => [name, rows[i][index]]),
-          ),
-        );
-        job.records.push({
-          id: randomUUID(),
-          clientId:
-            this.clients().find((c) => key(c.name) === key(canonical))?.id ||
-            key(canonical),
-          clientName: canonical,
-          reporterName: get("reporter", "reportername", "author"),
-          outlet: get("publication", "mediaoutlet", "outlet"),
-          publicationDate: normalizeDate(get("date", "publicationdate")),
-          articleTitle: title,
-          ...(!title
-            ? {
-                titleNeedsReview: true,
-                titleReviewReason: "Original source has no usable headline",
-              }
-            : {}),
-          articleUrl: url,
-          spokesperson: get("spokesperson", "spokespersons", "spokespersonsid"),
-          originalPressType: get("presstype", "coveragetype"),
-          coverageType: (get("presstype", "coveragetype") ||
-            "Earned Coverage") as CoverageRecord["coverageType"],
-          sentiment: get("sentiment"),
-          status: "Completed",
-          reach: get("uvm", "reach") || null,
-          outletType: "Trade Publication",
-          rawFields: { sourceTab: tab, sourceRow: String(i + 1) },
-          topics: [],
-          source: "PRCC",
-          sourceFile: job.file,
-          createdAt: now,
-          updatedAt: now,
-          urlSource: "prcc",
-          urlConfidence: "verified",
-          urlResolvedAt: now,
-        });
-      }
     }
     await mkdir(path.join(this.directory, "coverage-uploads"), {
       recursive: true,
@@ -380,6 +287,7 @@ export class CoverageWorkflow {
       path.join(this.directory, "coverage-uploads", job.id),
       buffer,
     );
+    (this.state.sourceOccurrences ??= []).push(...occurrences);
     this.state.jobs.push(job);
     this.state.paused = false;
     await this.save();
@@ -418,6 +326,73 @@ export class CoverageWorkflow {
         }
     } else throw new Error("Unknown queue action");
     await this.save();
+  }
+  /** Recover only retained uploads referenced by this installation's jobs, never backups or legacy data. */
+  private async recoverSourceRows() {
+    const occurrences = (this.state.sourceOccurrences ??= []);
+    const complete = new Set(occurrences.map((o) => o.jobId));
+    const records = new Map(
+      this.state.records.map((r) => [coverageIdentity(r), r]),
+    );
+    for (const job of this.state.jobs) {
+      if (complete.has(job.id) || job.sourceRows === 0) continue;
+      if (path.basename(job.id) !== job.id)
+        throw Error("Unsafe queued source path");
+      try {
+        const parsed = await parseCoverageSource(
+          await readFile(path.join(this.directory, "coverage-uploads", job.id)),
+          job.file,
+          job.id,
+          job.client,
+          this.clients().find((c) => key(c.name) === key(job.client))?.id ||
+            key(job.client),
+        );
+        job.sourceRows = parsed.occurrences.length;
+        // Pending jobs are ingested by the worker; completed and failed jobs need only previously omitted rows recovered.
+        if (job.records.length) {
+          job.records = parsed.records;
+          occurrences.push(...parsed.occurrences);
+          continue;
+        }
+        let recovered = 0;
+        for (const [index, occurrence] of parsed.occurrences.entries()) {
+          const candidate = parsed.records[index];
+          const existing = records.get(coverageIdentity(candidate));
+          if (existing) {
+            occurrence.recordId = existing.id;
+            occurrence.duplicate = true;
+          } else {
+            this.state.records.push(candidate);
+            records.set(coverageIdentity(candidate), candidate);
+            occurrence.recovered = true;
+          }
+          occurrence.recovered ||= job.errors.some(
+            (error) =>
+              error.tab === occurrence.worksheet &&
+              error.row === occurrence.rowNumber,
+          );
+          if (occurrence.recovered) recovered++;
+          occurrences.push(occurrence);
+        }
+        job.recoveredRows = recovered;
+        job.recoveryError = undefined;
+      } catch (error) {
+        job.recoveryError =
+          error instanceof Error ? error.message : String(error);
+      }
+    }
+    this.state.losslessVersion = 1;
+    // The first occurrence is not a duplicate even when it links an existing normalized record.
+    const seen = new Set<string>();
+    const byId = new Map(
+      this.state.records.map((record) => [record.id, record]),
+    );
+    for (const occurrence of occurrences) {
+      occurrence.duplicate = seen.has(occurrence.recordId);
+      seen.add(occurrence.recordId);
+      const record = byId.get(occurrence.recordId);
+      if (record) occurrence.incomplete = incompleteFields(record);
+    }
   }
   private async repairTitlesFromUploads() {
     if (this.state.titleRepairVersion === 1) return;
@@ -527,24 +502,42 @@ export class CoverageWorkflow {
       if (!j.records.length && !j.imported && !j.duplicates) {
         j.state = "failed";
         j.sync = "not-required";
-        j.error =
-          "No valid coverage rows; correct the listed validation errors and upload again.";
+        j.error = "The source contains no nonempty data rows.";
         await this.save();
         return;
       }
       const seen = new Set(this.state.records.map(coverageIdentity));
-      for (const r of j.records)
+      for (const r of j.records) {
+        const occurrence = this.state.sourceOccurrences?.find(
+          (o) => o.id === r.rawFields.sourceOccurrenceId,
+        );
         if (!seen.has(coverageIdentity(r))) {
           seen.add(coverageIdentity(r));
           this.state.records.push(r);
           j.imported++;
-        } else j.duplicates++;
+        } else {
+          j.duplicates++;
+          if (occurrence) {
+            occurrence.duplicate = true;
+            occurrence.recordId = this.state.records.find(
+              (existing) => coverageIdentity(existing) === coverageIdentity(r),
+            )!.id;
+          }
+        }
+      }
       // Local commit and counters are durable before any remote operation.
       j.records = [];
       this.state.records.sort((a, b) =>
         b.publicationDate.localeCompare(a.publicationDate),
       );
       await this.save();
+      if (!j.client) {
+        j.state = "failed";
+        j.sync = "not-required";
+        j.needsAttention = true;
+        await this.save();
+        return;
+      }
       const delivery = await this.deliverClient(j.client);
       if (delivery.state === "verified") {
         j.sync = "verified";
@@ -569,7 +562,9 @@ export class CoverageWorkflow {
   }
   private scheduleDeliveries() {
     const deliveries = (this.state.deliveries ??= {});
-    for (const client of new Set(this.state.records.map((r) => r.clientName))) {
+    for (const client of new Set(
+      this.state.records.map((r) => r.clientName).filter(Boolean),
+    )) {
       const signature = coverageSignature(this.clientRecords(client));
       const previous = deliveries[key(client)];
       if (!previous || previous.signature !== signature)
@@ -608,6 +603,19 @@ export class CoverageWorkflow {
       delivery.error = undefined;
       delivery.nextAttemptAt = undefined;
       (this.state.syncedSignatures ??= {})[key(client)] = delivery.signature;
+      for (const job of this.state.jobs)
+        if (
+          key(job.client) === key(client) &&
+          !job.records.length &&
+          job.state !== "cancelled" &&
+          !job.needsAttention &&
+          (job.sync === "failed" || job.sync === "pending")
+        ) {
+          job.sync = "verified";
+          job.state = "completed";
+          job.error = undefined;
+          job.nextAttemptAt = undefined;
+        }
     } catch (error: any) {
       delivery.error = error instanceof Error ? error.message : String(error);
       delivery.attempts++;
@@ -663,7 +671,19 @@ export class CoverageWorkflow {
         (j) => j.state === "pending" || j.state === "running",
       ).length,
       importedRecords: this.state.records.length,
-      rejectedRecords: jobs.reduce((n, j) => n + j.errors.length, 0),
+      rejectedRecords: 0,
+      sourceRowsIngested: this.state.sourceOccurrences?.length ?? 0,
+      uniqueCoverageRecords: this.state.records.length,
+      duplicateSourceOccurrences:
+        this.state.sourceOccurrences?.filter((o) => o.duplicate).length ?? 0,
+      incompleteRecords: this.state.records.filter(
+        (r) => incompleteFields(r).length > 0,
+      ).length,
+      actualImportFailures: jobs.filter(
+        (j) =>
+          j.state === "failed" && j.sync === "not-required" && !j.sourceRows,
+      ).length,
+      recoveredSourceRows: jobs.reduce((n, j) => n + (j.recoveredRows ?? 0), 0),
       googleVerifiedFiles: jobs.filter(
         (j) =>
           j.sync === "verified" ||
@@ -679,7 +699,12 @@ export class CoverageWorkflow {
       ).length,
       verifiedCoverageRecords: Object.values(
         this.state.deliveries ?? {},
-      ).reduce((n, d) => n + (d.destination?.verifiedRecords ?? 0), 0),
+      ).reduce(
+        (n, d) =>
+          n +
+          (d.state === "verified" ? (d.destination?.verifiedRecords ?? 0) : 0),
+        0,
+      ),
     };
   }
 }

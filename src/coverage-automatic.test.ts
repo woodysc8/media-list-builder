@@ -18,7 +18,7 @@ const clients = [
 ];
 const csv = (url: string) =>
   Buffer.from(
-    `Date,Publication,UVM,Reporter,Status,Raw URL\n2026-11-01,Example,107,Test Writer,Original headline,${url}\n2026-11-02,Example,999,Test Writer,Rejected row,invalid`,
+    `Date,Publication,UVM,Reporter,Status,Raw URL\n2026-11-01,Example,107,Test Writer,Original headline,${url}`,
   );
 const initial = emptyCoverage();
 initial.automatic = undefined;
@@ -62,6 +62,7 @@ initial.jobs = [
     records: [],
     errors: [],
     imported: 107,
+    sourceRows: 0,
     duplicates: 0,
     sync: "local-only",
     attempts: 0,
@@ -142,9 +143,9 @@ await queue.tick();
 assert.equal(queue.state.jobs.at(-1)?.state, "completed");
 assert.equal(queue.state.jobs.at(-1)?.sync, "verified");
 assert.equal(
-  queue.state.jobs.at(-1)?.errors[0].row,
-  3,
-  "Rejected rows never hold valid coverage for review",
+  queue.state.jobs.at(-1)?.errors.length,
+  0,
+  "Complete sources ingest without errors",
 );
 const callsAfterImport = calls;
 await queue.enqueue(csv("https://example.com/acme"), "Acme PRCC identical.csv");
@@ -156,7 +157,12 @@ assert.equal(
 );
 await queue.enqueue(csv("https://example.com/ambiguous"), "Shared PRCC.csv");
 assert.equal(queue.state.jobs.at(-1)?.needsAttention, true);
-assert.equal(queue.state.jobs.at(-1)?.records.length, 0);
+assert.equal(
+  queue.state.jobs.at(-1)?.records.length,
+  1,
+  "Ambiguous-client rows are retained without guessing",
+);
+await queue.tick();
 await queue.enqueue(Buffer.from("not a workbook"), "Beta PRCC.xlsx");
 assert.equal(
   queue.state.jobs.at(-1)?.state,
@@ -193,7 +199,11 @@ assert.equal(
 );
 assert.equal(queue.summary().status, "Completed");
 assert.equal(queue.summary().failedFiles, 2);
-assert.equal(queue.summary().importedRecords, 110);
+assert.equal(
+  queue.summary().importedRecords,
+  111,
+  "Unassigned-client source rows are also ingested locally",
+);
 assert.deepEqual(
   queue.state.records.filter((r) => r.clientName === "Conquest"),
   originalRecords,

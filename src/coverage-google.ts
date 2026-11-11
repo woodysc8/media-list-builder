@@ -1,5 +1,6 @@
 import type { drive_v3, sheets_v4 } from "googleapis";
 import type { CoverageDestination, CoverageRecord } from "./domain.js";
+import { validArticleUrl } from "./coverage-source.js";
 import {
   TEMPLATE_HEADERS,
   TEMPLATE_WIDTHS,
@@ -46,11 +47,26 @@ export async function syncClientWorkbook(
     context = {},
   } = options;
   let next = 0;
-  async function call<T>(action: () => Promise<T>) {
+  async function call<T>(action: () => Promise<T>, retry = true) {
     const delay = Math.max(0, next - Date.now());
     if (delay) await new Promise((r) => setTimeout(r, delay));
     next = Date.now() + (options.requestIntervalMs ?? 1100);
-    return action();
+    for (let attempt = 0; ; attempt++) {
+      try {
+        return await action();
+      } catch (error: any) {
+        const status = Number(error.response?.status || error.code);
+        if (
+          !retry ||
+          attempt >= 3 ||
+          ![408, 429, 500, 502, 503, 504].includes(status)
+        )
+          throw error;
+        await new Promise((r) =>
+          setTimeout(r, Math.min(30000, 1000 * 2 ** attempt)),
+        );
+      }
+    }
   }
   const getFile = async (id: string) =>
     (
@@ -96,13 +112,15 @@ export async function syncClientWorkbook(
     const file = existing
       ? await getFile(existing.id!)
       : (
-          await call(() =>
-            drive.files.create({
-              requestBody: { name, mimeType: folderMime, parents: [parent] },
-              fields:
-                "id,name,parents,webViewLink,capabilities(canAddChildren)",
-              supportsAllDrives: true,
-            }),
+          await call(
+            () =>
+              drive.files.create({
+                requestBody: { name, mimeType: folderMime, parents: [parent] },
+                fields:
+                  "id,name,parents,webViewLink,capabilities(canAddChildren)",
+                supportsAllDrives: true,
+              }),
+            false,
           )
         ).data;
     if (!file.id) throw fail("Google Drive did not return a folder ID");
@@ -133,7 +151,10 @@ export async function syncClientWorkbook(
   if (destination) {
     try {
       const file = await getFile(destination);
-      if (file.trashed || file.mimeType !== sheetMime) destination = undefined;
+      if (file.trashed || file.mimeType !== sheetMime)
+        throw fail(
+          "Stored coverage destination is unavailable; refusing to recreate it",
+        );
       else if (
         /master.*(reporter|outlet)|(reporter|outlet).*master/i.test(
           file.name ?? "",
@@ -145,9 +166,12 @@ export async function syncClientWorkbook(
       else if (file.capabilities?.canEdit === false)
         throw fail("Approved coverage spreadsheet is not writable");
     } catch (error: any) {
-      if ([404, 410].includes(Number(error.response?.status || error.code)))
-        destination = undefined;
-      else throw error;
+      throw Object.assign(
+        new Error(
+          `Existing coverage spreadsheet for ${client} could not be used (${destination}): ${error.message || error.code || "Google API error"}. It was not recreated.`,
+        ),
+        { code: error.response?.status || error.code || 400 },
+      );
     }
   }
   if (!destination) {
@@ -183,17 +207,19 @@ export async function syncClientWorkbook(
     if (!destination)
       destination =
         (
-          await call(() =>
-            drive.files.create({
-              requestBody: {
-                name: client,
-                mimeType: sheetMime,
-                parents: [clientFolder.id!],
-                appProperties: { coverageRebuild: marker },
-              },
-              fields: "id",
-              supportsAllDrives: true,
-            }),
+          await call(
+            () =>
+              drive.files.create({
+                requestBody: {
+                  name: client,
+                  mimeType: sheetMime,
+                  parents: [clientFolder.id!],
+                  appProperties: { coverageRebuild: marker },
+                },
+                fields: "id",
+                supportsAllDrives: true,
+              }),
+            false,
           )
         ).data.id ?? undefined;
   }
@@ -283,11 +309,13 @@ export async function syncClientWorkbook(
         },
       });
   if (layout.length)
-    await call(() =>
-      sheets.spreadsheets.batchUpdate({
-        spreadsheetId: destination!,
-        requestBody: { requests: layout },
-      }),
+    await call(
+      () =>
+        sheets.spreadsheets.batchUpdate({
+          spreadsheetId: destination!,
+          requestBody: { requests: layout },
+        }),
+      false,
     );
   const refreshed =
     (
@@ -370,6 +398,37 @@ export async function syncClientWorkbook(
         });
     }
   }
+  // Grid capacity must exist BEFORE writing. This also makes retries of >1,000-row clients safe.
+  await call(() =>
+    sheets.spreadsheets.batchUpdate({
+      spreadsheetId: destination!,
+      requestBody: {
+        requests: names.map((name) => {
+          const sheet = refreshed.find(
+            (t) => t.properties?.title === name,
+          )!.properties!;
+          return {
+            updateSheetProperties: {
+              properties: {
+                sheetId: sheet.sheetId,
+                gridProperties: {
+                  rowCount: Math.max(
+                    sheet.gridProperties?.rowCount ?? 1000,
+                    expected[name].length + 100,
+                  ),
+                  columnCount: Math.max(
+                    sheet.gridProperties?.columnCount ?? 26,
+                    26,
+                  ),
+                },
+              },
+              fields: "gridProperties.rowCount,gridProperties.columnCount",
+            },
+          };
+        }),
+      },
+    }),
+  );
   if (clears.length)
     await call(() =>
       sheets.spreadsheets.values.batchClear({
@@ -377,13 +436,33 @@ export async function syncClientWorkbook(
         requestBody: { ranges: clears },
       }),
     );
-  if (writes.length)
+  // Bounded deterministic ranges: a restart compares remote values and skips already committed batches.
+  for (let offset = 0; offset < writes.length; offset += 2) {
+    const batch = writes.slice(offset, offset + 2);
     await call(() =>
       sheets.spreadsheets.values.batchUpdate({
         spreadsheetId: destination!,
-        requestBody: { valueInputOption: "RAW", data: writes },
+        requestBody: { valueInputOption: "RAW", data: batch },
       }),
     );
+    const result = await call(() =>
+      sheets.spreadsheets.values.batchGet({
+        spreadsheetId: destination!,
+        ranges: batch.map((b) => b.range!),
+        valueRenderOption: "UNFORMATTED_VALUE",
+      }),
+    );
+    for (const [index, range] of batch.entries())
+      if (
+        comparable(
+          result.data.valueRanges?.[index]?.values ?? [],
+          range.values![0].length,
+        ) !== comparable(range.values!, range.values![0].length)
+      )
+        throw new Error(
+          `Google coverage batch read-back failed: ${client} ${range.range}`,
+        );
+  }
   const formatting: sheets_v4.Schema$Request[] = [
     {
       updateSpreadsheetProperties: {
@@ -534,7 +613,11 @@ export async function syncClientWorkbook(
                 values: [
                   {
                     userEnteredFormat: {
-                      textFormat: { link: { uri: r.articleUrl } },
+                      textFormat: {
+                        ...(validArticleUrl(r.articleUrl)
+                          ? { link: { uri: r.articleUrl } }
+                          : {}),
+                      },
                     },
                   },
                 ],

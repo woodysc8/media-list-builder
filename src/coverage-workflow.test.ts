@@ -97,14 +97,14 @@ await assert.rejects(
   /refusing historical recovery/,
 );
 const csv = Buffer.from(
-  "Press Type,Date,Publication,UVM,Reporter,Spokesperson,Status,Raw URL\r\nEarned Coverage,2026-01-01,Example,12345,A Writer,CEO,Original headline,https://example.com/a?x=1&y=2\r\nEarned Coverage,2026-03-01,Example,555,A Writer,CEO,Second headline,https://example.com/b\r\nEarned Coverage,2026-02-01,Example,999,A Writer,CEO,Rejected,ftp://example.com/c",
+  "Press Type,Date,Publication,UVM,Reporter,Spokesperson,Status,Raw URL\r\nEarned Coverage,2026-01-01,Example,12345,A Writer,CEO,Original headline,https://example.com/a?x=1&y=2\r\nEarned Coverage,2026-03-01,Example,555,A Writer,CEO,Second headline,https://example.com/b",
 );
 const j = await queue.enqueue(csv, "AC PRCC 2026.csv");
 assert.equal(j.client, "Acme");
 assert.equal(j.records[0].articleTitle, "Original headline");
 assert.equal(j.records[0].reach, "12345");
 assert.equal(j.records[0].articleUrl, "https://example.com/a?x=1&y=2");
-assert.equal(j.errors[0].row, 4);
+assert.equal(j.errors.length, 0);
 await queue.enqueue(csv, "Acme PRCC duplicate.csv");
 await queue.control("start");
 await queue.tick();

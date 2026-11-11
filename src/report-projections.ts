@@ -38,7 +38,7 @@ export function reporterReportRow(reporter: ReporterRecord): string[] {
 }
 
 export function outletReportRow(record: CoverageRecord, outlet: OutletRecord | undefined): string[] {
-  const outletType = record.outletType || classifyOutletType(record.outlet, record.originalPressType, record.coverageType).outletType;
+  const outletType = record.outletType || classifyOutletType(record.outlet, record.originalPressType, record.coverageType || undefined).outletType;
   return [outlet?.name ?? record.outlet, outletType];
 }
 

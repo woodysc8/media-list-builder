@@ -51,6 +51,7 @@ state.jobs = [
     state: "completed",
     records: [],
     errors: [],
+    sourceRows: 0,
     imported: 107,
     duplicates: 0,
     sync: "local-only",
@@ -58,6 +59,7 @@ state.jobs = [
   },
   {
     id: "conquest-duplicate",
+    sourceRows: 0,
     file: "Conquest PRCC.csv",
     client: "Conquest",
     year: "2026",
@@ -77,6 +79,7 @@ state.jobs = [
     state: "completed",
     records: [],
     errors: [],
+    sourceRows: 0,
     imported: 279,
     duplicates: 0,
     sync: "verified",

@@ -51,6 +51,16 @@ let serial = 0,
   writes = 0,
   badFont = false,
   denyRoot = false;
+let transientValueFailures = 0;
+let failWriteAt = 0,
+  valueRequests = 0;
+function readRange(book: any, value: string) {
+  const target = range(book, value);
+  const end = value.match(/:[A-Z]+(\d+)$/)?.[1];
+  return structuredClone(
+    target.tab.values.slice(target.row, end ? Number(end) : undefined),
+  );
+}
 const formats: any[] = [];
 function range(book: any, value: string) {
   const match = value.match(/^'([^']+)'!([A-Z]+)(\d*)/)!;
@@ -251,16 +261,32 @@ const sheets: any = {
         data: {
           valueRanges: r.ranges.map((value: string) => ({
             range: value,
-            values: structuredClone(
-              range(books.get(r.spreadsheetId), value).tab.values,
-            ),
+            values: readRange(books.get(r.spreadsheetId), value),
           })),
         },
       }),
       batchUpdate: async (r: any) => {
+        valueRequests++;
+        if (transientValueFailures-- > 0)
+          throw Object.assign(new Error("temporary Google unavailable"), {
+            code: 503,
+          });
+        if (failWriteAt === valueRequests)
+          throw Object.assign(new Error("Fixture interrupted write"), {
+            code: 400,
+          });
+        assert.ok(
+          r.requestBody.data.length <= 2,
+          "Google value writes are bounded",
+        );
         for (const data of r.requestBody.data) {
           writes++;
           const target = range(books.get(r.spreadsheetId), data.range);
+          assert.ok(
+            target.row + data.values.length <=
+              target.tab.properties.gridProperties.rowCount,
+            "Grid expanded before values writes",
+          );
           data.values.forEach((row: any[], i: number) => {
             target.tab.values[target.row + i] = [...row];
           });
@@ -451,6 +477,62 @@ await assert.rejects(
   /Calibri verification failed/,
 );
 badFont = false;
+const large = Array.from({ length: 1505 }, (_, i) =>
+  record(`https://example.com/large/${i}`),
+);
+large.push({
+  ...record(""),
+  articleTitle: "",
+  publicationDate: "",
+  reporterName: "",
+  outlet: "",
+});
+failWriteAt = valueRequests + 2;
+await assert.rejects(
+  syncClientWorkbook({ ...options, records: large }),
+  /Fixture interrupted write/,
+);
+const committed = structuredClone(
+  book.tabs
+    .find((t) => t.properties.title === "Coverage")!
+    .values.slice(0, 501),
+);
+failWriteAt = 0;
+const resumed = await syncClientWorkbook({ ...options, records: large });
+assert.equal(resumed.verifiedRecords, 1506);
+assert.deepEqual(
+  book.tabs
+    .find((t) => t.properties.title === "Coverage")!
+    .values.slice(0, 501),
+  committed,
+);
+const afterResume = writes;
+await syncClientWorkbook({ ...options, records: large });
+assert.equal(
+  writes,
+  afterResume,
+  "Completed batches are not written again on retry/restart",
+);
+const retriedRecords = large.map((r) => ({ ...r }));
+retriedRecords[0].articleTitle = "Updated source headline";
+const callsBeforeRetry = valueRequests;
+transientValueFailures = 1;
+await syncClientWorkbook({ ...options, records: retriedRecords });
+assert.equal(
+  valueRequests,
+  callsBeforeRetry + 2,
+  "Transient Google request retries back off and do not duplicate committed writes",
+);
+const incomplete = book.tabs
+  .find((t) => t.properties.title === "Coverage")!
+  .values.at(-1)!;
+assert.equal(incomplete[0], "");
+assert.equal(incomplete[1], "");
+assert.equal(incomplete[10], "");
+await assert.rejects(
+  syncClientWorkbook({ ...options, destination: "missing-existing" }),
+  (error) => (error as any).code === 404,
+);
 denyRoot = true;
 await assert.rejects(
   syncClientWorkbook(options),

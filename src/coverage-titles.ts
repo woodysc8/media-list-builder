@@ -1,5 +1,9 @@
 import readXlsx from "read-excel-file/node";
 import { parse } from "csv-parse/sync";
+import {
+  originalXlsxTables,
+  type OriginalCell,
+} from "./coverage-xlsx-source.js";
 export const headerKey = (value: unknown) =>
   String(value ?? "")
     .toLowerCase()
@@ -59,15 +63,46 @@ export function extractArticleTitle(fields: Record<string, unknown>) {
 export async function coverageTables(
   buffer: Buffer,
   filename: string,
-): Promise<{ tab: string; rows: unknown[][] }[]> {
-  if (/\.xlsx$/i.test(filename))
-    return (await readXlsx(buffer)).map((sheet) => ({
-      tab: sheet.sheet,
-      rows: sheet.data,
+): Promise<
+  {
+    tab: string;
+    rows: unknown[][];
+    originalRows?: unknown[][];
+    cells?: OriginalCell[][];
+  }[]
+> {
+  if (/\.xlsx$/i.test(filename)) {
+    const originals = originalXlsxTables(buffer);
+    let displayed: Awaited<ReturnType<typeof readXlsx>> = [];
+    try {
+      displayed = await readXlsx(buffer, { trim: false });
+    } catch {
+      /* Stored cells still survive malformed Excel metadata. */
+    }
+    return originals.map((sheet) => ({
+      tab: sheet.tab,
+      originalRows: sheet.rows,
+      cells: sheet.cells,
+      rows: sheet.rows.map((row, index) =>
+        row.map(
+          (value, column) =>
+            displayed.find((s) => s.sheet === sheet.tab)?.data[index]?.[
+              column
+            ] ?? value,
+        ),
+      ),
     }));
+  }
   if (/\.csv$/i.test(filename))
     return [
-      { tab: "", rows: parse(buffer, { bom: true, skip_empty_lines: false }) },
+      {
+        tab: "",
+        rows: parse(buffer, {
+          bom: true,
+          skip_empty_lines: false,
+          relax_column_count: true,
+        }),
+      },
     ];
   throw new Error("Only CSV and XLSX files are supported");
 }

@@ -36,7 +36,7 @@
         <a href="/">← Media List Builder</a>
         <h1>Coverage</h1>
         <p>
-          Upload corrected PRCC files. Original article URLs are required.
+          Upload PRCC files. Every nonempty source row is preserved, including incomplete records.
           Processing continues while this page is closed.
         </p>
       </header>
@@ -57,8 +57,8 @@
           </div>
         </form>
         <p>
-          Selected or dropped files upload and process automatically. Valid rows
-          synchronize to Google; rejected rows and files needing attention
+          Selected or dropped files upload and process automatically. Coverage rows
+          synchronize to Google with blanks for unavailable fields; incomplete rows and files needing attention
           remain available in the optional errors view. Keep this page open
           until file transfers finish; processing then continues on the server.
         </p>
@@ -127,6 +127,7 @@
           /><label>From <input id="from" type="date" /></label
           ><label>To <input id="to" type="date" /></label
           ><button id="export">Export filtered CSV</button>
+          <button id="export-sources">Export source history JSON</button>
         </div>
         <p id="library-summary"></p>
         <div class="table-wrap">
