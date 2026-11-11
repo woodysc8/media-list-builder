@@ -1,8 +1,14 @@
 import { mkdir, readFile, writeFile, rename } from "node:fs/promises";
 import path from "node:path";
 import { randomUUID, createHash } from "node:crypto";
-import { parse } from "csv-parse/sync";
-import readXlsx from "read-excel-file/node";
+import {
+  coverageTables,
+  extractArticleTitle,
+  headerKey,
+  usableTitle,
+  linkCell,
+} from "./coverage-titles.js";
+import { WORKBOOK_VERSION } from "./coverage-template.js";
 import type {
   CoverageRecord,
   ClientRecord,
@@ -83,21 +89,22 @@ export function identifyClient(
 export function coverageSignature(records: CoverageRecord[]) {
   return createHash("sha256")
     .update(
-      JSON.stringify(
-        records.map((r) => [
-          r.publicationDate,
-          r.articleTitle,
-          r.clientName,
-          r.outlet,
-          r.reporterName,
-          r.spokesperson,
-          r.originalPressType || r.coverageType,
-          r.sentiment,
-          r.status,
-          r.reach ?? "",
-          r.articleUrl,
-        ]),
-      ),
+      WORKBOOK_VERSION +
+        JSON.stringify(
+          records.map((r) => [
+            r.publicationDate,
+            r.articleTitle,
+            r.clientName,
+            r.outlet,
+            r.reporterName,
+            r.spokesperson,
+            r.originalPressType || r.coverageType,
+            r.sentiment,
+            r.status,
+            r.reach ?? "",
+            r.articleUrl,
+          ]),
+        ),
     )
     .digest("hex");
 }
@@ -140,6 +147,8 @@ export interface CoverageState {
   syncedSignatures?: Record<string, string>;
   automatic?: boolean;
   deliveries?: Record<string, CoverageDelivery>;
+  titleRepairVersion?: number;
+  folders?: Record<string, { clientsFolderId: string; clientFolderId: string }>;
 }
 export interface CoverageDelivery {
   client: string;
@@ -199,6 +208,7 @@ export class CoverageWorkflow {
       this.state.automatic = true;
     }
     if (!options.readOnly) {
+      await this.repairTitlesFromUploads();
       if (!this.state.deliveries) this.state.paused = false;
       for (const delivery of Object.values(this.state.deliveries ?? {}))
         if (delivery.state === "running") delivery.state = "pending";
@@ -216,15 +226,7 @@ export class CoverageWorkflow {
     const tables: { tab: string; rows: unknown[][] }[] = [];
     let parsingError = "";
     try {
-      if (/\.xlsx$/i.test(filename)) {
-        for (const sheet of await readXlsx(buffer))
-          tables.push({ tab: sheet.sheet, rows: sheet.data });
-      } else if (/\.csv$/i.test(filename))
-        tables.push({
-          tab: "",
-          rows: parse(buffer, { bom: true, skip_empty_lines: false }),
-        });
-      else throw new Error("Only CSV and XLSX files are supported");
+      tables.push(...(await coverageTables(buffer, filename)));
     } catch (error) {
       parsingError = error instanceof Error ? error.message : String(error);
     }
@@ -302,7 +304,7 @@ export class CoverageWorkflow {
           }
           return "";
         };
-        const url = get(
+        const candidate = get(
           "rawurl",
           "rawarticleurl",
           "articleurl",
@@ -310,8 +312,12 @@ export class CoverageWorkflow {
           "articlelink",
           "sourceurl",
           "coverageurl",
-          "link",
         );
+        const url = validUrl(candidate)
+          ? candidate
+          : ["coveragelink", "articlelink", "link", "status"]
+              .map((name) => linkCell(rows[i][headers.indexOf(name)]).url)
+              .find((value) => validUrl(value)) || candidate;
         if (!canonical) continue;
         if (!validUrl(url)) {
           job.errors.push({
@@ -325,6 +331,11 @@ export class CoverageWorkflow {
           continue;
         }
         const now = new Date().toISOString();
+        const title = extractArticleTitle(
+          Object.fromEntries(
+            headers.map((name, index) => [name, rows[i][index]]),
+          ),
+        );
         job.records.push({
           id: randomUUID(),
           clientId:
@@ -334,7 +345,13 @@ export class CoverageWorkflow {
           reporterName: get("reporter", "reportername", "author"),
           outlet: get("publication", "mediaoutlet", "outlet"),
           publicationDate: normalizeDate(get("date", "publicationdate")),
-          articleTitle: get("articletitle", "title", "headline", "status"),
+          articleTitle: title,
+          ...(!title
+            ? {
+                titleNeedsReview: true,
+                titleReviewReason: "Original source has no usable headline",
+              }
+            : {}),
           articleUrl: url,
           spokesperson: get("spokesperson", "spokespersons", "spokespersonsid"),
           originalPressType: get("presstype", "coveragetype"),
@@ -401,6 +418,91 @@ export class CoverageWorkflow {
         }
     } else throw new Error("Unknown queue action");
     await this.save();
+  }
+  private async repairTitlesFromUploads() {
+    if (this.state.titleRepairVersion === 1) return;
+    const evidence = new Map<string, Set<string>>();
+    const directEvidence = new Map<string, Set<string>>();
+    for (const job of this.state.jobs) {
+      if (path.basename(job.id) !== job.id)
+        throw new Error("Unsafe queued source path");
+      try {
+        for (const { tab, rows } of await coverageTables(
+          await readFile(path.join(this.directory, "coverage-uploads", job.id)),
+          job.file,
+        )) {
+          const header = rows.findIndex((row) =>
+            row.some((cell) =>
+              ["rawurl", "articleurl", "url"].includes(headerKey(cell)),
+            ),
+          );
+          if (header < 0) continue;
+          const names = rows[header].map(headerKey);
+          for (const [offset, row] of rows.slice(header + 1).entries()) {
+            const fields = Object.fromEntries(
+              names.map((name, index) => [name, row[index]]),
+            );
+            const url = String(
+              fields.rawurl ?? fields.articleurl ?? fields.url ?? "",
+            );
+            if (!validUrl(url)) continue;
+            const title = extractArticleTitle(fields);
+            if (!title) continue;
+            const identity = coverageIdentity({
+              clientName:
+                this.clients().find((c) =>
+                  [c.name, ...c.aliases].some(
+                    (n) => key(n) === key(job.client),
+                  ),
+                )?.name || job.client,
+              articleUrl: url,
+            } as CoverageRecord);
+            const titles = evidence.get(identity) ?? new Set<string>();
+            titles.add(title);
+            evidence.set(identity, titles);
+            const location = [
+              job.file,
+              tab,
+              String(header + offset + 2),
+              identity,
+            ].join("|");
+            const direct = directEvidence.get(location) ?? new Set<string>();
+            direct.add(title);
+            directEvidence.set(location, direct);
+          }
+        }
+      } catch (error: any) {
+        if (error.code !== "ENOENT")
+          console.warn("[COVERAGE] Title source could not be read:", job.id);
+      }
+    }
+    for (const record of [
+      ...this.state.records,
+      ...this.state.jobs.flatMap((j) => j.records),
+    ]) {
+      if (usableTitle(record.articleTitle)) continue;
+      const titles =
+        directEvidence.get(
+          [
+            record.sourceFile,
+            record.rawFields.sourceTab ?? "",
+            record.rawFields.sourceRow,
+            coverageIdentity(record),
+          ].join("|"),
+        ) ?? evidence.get(coverageIdentity(record));
+      if (titles?.size === 1) {
+        record.articleTitle = [...titles][0];
+        delete record.titleNeedsReview;
+        delete record.titleReviewReason;
+      } else {
+        record.articleTitle = "";
+        record.titleNeedsReview = true;
+        record.titleReviewReason = titles?.size
+          ? "Conflicting headlines in original uploads"
+          : "Original queued source has no recoverable headline";
+      }
+    }
+    this.state.titleRepairVersion = 1;
   }
   async tick() {
     if (this.busy || this.state.paused) return;
@@ -497,6 +599,11 @@ export class CoverageWorkflow {
         },
       );
       if (destination) delivery.destination = destination;
+      if (destination?.clientsFolderId && destination.clientFolderId)
+        (this.state.folders ??= {})[key(client)] = {
+          clientsFolderId: destination.clientsFolderId,
+          clientFolderId: destination.clientFolderId,
+        };
       delivery.state = "verified";
       delivery.error = undefined;
       delivery.nextAttemptAt = undefined;

@@ -2,6 +2,7 @@
 import path from "node:path";
 import { GoogleWorkspace } from "./google.js";
 import { acquireCoverageLock } from "./coverage-lock.js";
+GoogleWorkspace.prototype.inspectRoot=async()=>({name:'Fixture root',clientsFolder:undefined,reporterSheet:undefined,outletSheet:undefined});
 GoogleWorkspace.prototype.syncCleanCoverage = async function (
   client,
   records,

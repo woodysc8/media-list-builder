@@ -151,7 +151,7 @@ function render() {
     const tr = document.createElement("tr");
     for (const v of [
       r.publicationDate,
-      r.articleTitle,
+      r.articleTitle || (r.titleNeedsReview ? 'Title needs review' : ''),
       r.clientName,
       r.outlet,
       r.reporterName,

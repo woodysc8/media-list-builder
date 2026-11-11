@@ -10,7 +10,7 @@
     "coverage:fresh-start": "tsx src/coverage-fresh-start.ts",
     "coverage:verify": "tsx src/coverage-verify.ts",
     "coverage:audit": "tsx src/coverage-audit.ts",
-    "test:coverage": "tsx src/coverage-workflow.test.ts && tsx src/coverage-automatic.test.ts && tsx src/coverage-delivery.test.ts && tsx src/coverage-server.test.ts",
+    "test:coverage": "tsx src/coverage-titles.test.ts && tsx src/coverage-google.test.ts && tsx src/coverage-workflow.test.ts && tsx src/coverage-automatic.test.ts && tsx src/coverage-delivery.test.ts && tsx src/coverage-server.test.ts",
     "dev": "tsx watch src/server.ts",
     "build": "tsc --noEmit",
     "test": "npm run test:media && tsx src/reporter-type.test.ts && tsx src/reporter-directory-source.test.ts && tsx src/google-reporter-tabs.test.ts && tsx src/canonical-beats.test.ts && tsx src/canonical-beat-migration.test.ts && tsx src/google-oauth.test.ts && tsx src/vercel-entrypoint.test.ts && node --test public/reporter-filter.test.js public/filter-selection.test.js",

@@ -1,3 +1,5 @@
+import {syncClientWorkbook} from "./coverage-google.js";
+import type {TemplateContext} from "./coverage-template.js";
 import { google, drive_v3, sheets_v4 } from "googleapis";
 import type { Credentials } from "google-auth-library";
 import type {
@@ -197,72 +199,9 @@ export class GoogleWorkspace {
     }
   }
   /** Writes only the dedicated clean-rebuild destination; never reads legacy coverage. */
-  async syncCleanCoverage(client: string, records: import('./domain.js').CoverageRecord[], destination: string | undefined, persist: (id: string) => Promise<void>, generation: string, approvedTab?: string) {
+  async syncCleanCoverage(client: string, records: CoverageRecord[], destination: string | undefined, persist: (id: string) => Promise<void>, generation: string, _approvedTab?: string, context: TemplateContext = {}) {
     if (!this.connected) throw new Error('Google is not connected; local import is saved');
-    await this.validateCoverageFolder();
-    let createdHere=false;
-    let dedicated=!destination;
-    if(destination) {
-      try {
-        const file=await this.drive.files.get({fileId:destination,fields:'id,name,mimeType,trashed,capabilities(canEdit)',supportsAllDrives:true});
-        if(/master.*(reporter|outlet)|(reporter|outlet).*master/i.test(file.data.name??'')) throw Object.assign(new Error('Master reporter/outlet spreadsheets cannot be coverage destinations'),{code:400});
-        if(file.data.trashed || file.data.mimeType!=='application/vnd.google-apps.spreadsheet') {destination=undefined;dedicated=true;}
-        else if(file.data.capabilities?.canEdit===false) throw new Error('Approved coverage spreadsheet is not writable');
-      } catch(error:any) {
-        if([404,410].includes(Number(error.response?.status||error.code))) {destination=undefined;dedicated=true;}
-        else throw error;
-      }
-    }
-    if (!destination) {
-      // Stable app property recovers a create whose response was lost without duplicating a sheet.
-      const marker = `coverage-v2:${generation}:${client.toLowerCase().replace(/[^a-z0-9]/g,'')}`;
-      const escaped = marker.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-      const found = await this.drive.files.list({q:`trashed = false and appProperties has { key='coverageRebuild' and value='${escaped}' }`,fields:'files(id)',includeItemsFromAllDrives:true,supportsAllDrives:true});
-      destination = found.data.files?.[0]?.id ?? undefined;
-      if (!destination) {
-        const created = await this.drive.files.create({requestBody:{name:`${client} - Clean Coverage`,mimeType:'application/vnd.google-apps.spreadsheet',parents:[this.rootFolderId],appProperties:{coverageRebuild:marker}},fields:'id',supportsAllDrives:true});
-        destination = created.data.id!;
-        if(!destination) throw new Error('Google Drive did not return the created coverage spreadsheet ID');
-        createdHere=true;
-      }
-    }
-    await persist(destination!);
-    const delivery=await this.describeCoverageDestination(destination!);
-    if((createdHere||delivery.managed) && !delivery.parents.some(parent=>parent.id===this.rootFolderId)) throw new Error('Google Drive coverage spreadsheet is outside the configured folder; no coverage was written');
-    const rows: (string|number)[][] = [['Date','Title','Client','Media Outlet','Reporter','Spokespersons ID','Coverage Type','Sentiment','Status','Reach','URL'], ...records.map(r=>[r.publicationDate,r.articleTitle,r.clientName,r.outlet,r.reporterName,r.spokesperson,r.originalPressType||r.coverageType,r.sentiment,r.status,r.reach??'',r.articleUrl])];
-    const metadata=await this.sheets.spreadsheets.get({spreadsheetId:destination,fields:'sheets(properties(sheetId,title,gridProperties))'});
-    const tabs=metadata.data.sheets??[];
-    const quote=(title:string)=>`'${title.replaceAll("'","''")}'`;
-    let tab=tabs.find(t=>t.properties?.title===(approvedTab||'Coverage'))?.properties;
-    if(!tab && dedicated && !approvedTab) tab=tabs[0]?.properties;
-    if(!tab && !approvedTab && tabs[0]?.properties?.title) {
-      const header=await this.sheets.spreadsheets.values.get({spreadsheetId:destination,range:`${quote(tabs[0].properties.title)}!A1:K1`});
-      if(JSON.stringify(header.data.values?.[0])===JSON.stringify(rows[0])) tab=tabs[0].properties;
-    }
-    if(!tab) {
-      const added=await this.sheets.spreadsheets.batchUpdate({spreadsheetId:destination,requestBody:{requests:[{addSheet:{properties:{title:approvedTab||'Coverage',gridProperties:{rowCount:Math.max(1000,rows.length),columnCount:11}}}}]}});
-      tab=added.data.replies?.[0]?.addSheet?.properties;
-    }
-    if(!tab || tab.sheetId===undefined || !tab.title) throw new Error('Coverage destination has no writable worksheet');
-    const currentHeader=await this.sheets.spreadsheets.values.get({spreadsheetId:destination,range:`${quote(tab.title)}!A1:K1`});
-    if(currentHeader.data.values?.[0]?.some(value=>String(value).trim()) && JSON.stringify(currentHeader.data.values[0])!==JSON.stringify(rows[0])) throw new Error('Coverage destination header differs from the approved schema; unrelated tab was not changed');
-    if((tab.gridProperties?.rowCount??0)<rows.length || (tab.gridProperties?.columnCount??0)<11) {
-      await this.sheets.spreadsheets.batchUpdate({spreadsheetId:destination,requestBody:{requests:[{updateSheetProperties:{properties:{sheetId:tab.sheetId,gridProperties:{rowCount:Math.max(rows.length,tab.gridProperties?.rowCount??1000),columnCount:Math.max(11,tab.gridProperties?.columnCount??26)}},fields:'gridProperties(rowCount,columnCount)'}}]}});
-    }
-    const sheetName=`'${tab.title.replaceAll("'","''")}'`;
-    for(let start=0;start<rows.length;start+=500) {
-      const values=rows.slice(start,start+500);
-      const range=`${sheetName}!A${start+1}:K${start+values.length}`;
-      const previous=await this.sheets.spreadsheets.values.get({spreadsheetId:destination,range,valueRenderOption:'UNFORMATTED_VALUE'});
-      if(JSON.stringify(previous.data.values)!==JSON.stringify(values)) {
-        await this.sheets.spreadsheets.values.update({spreadsheetId:destination,range,valueInputOption:'RAW',requestBody:{values}});
-        delivery.writtenBatches++;
-      }
-      const check=await this.sheets.spreadsheets.values.get({spreadsheetId:destination,range,valueRenderOption:'UNFORMATTED_VALUE'});
-      if(JSON.stringify(check.data.values)!==JSON.stringify(values)) throw new Error('Google coverage write verification failed');
-      await new Promise(resolve=>setTimeout(resolve,2100));
-    }
-    return {...delivery,verifiedRecords:records.length,verifiedAt:new Date().toISOString()};
+    return syncClientWorkbook({drive:this.drive,sheets:this.sheets,root:this.rootFolderId,client,records,destination,persist,generation,context});
   }
   private readonly oauth: InstanceType<typeof google.auth.OAuth2>;
   readonly redirectUri: string;

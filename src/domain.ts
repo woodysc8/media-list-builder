@@ -15,6 +15,10 @@ export interface CoverageDestination {
   verifiedAt: string;
   writtenBatches: number;
   managed?: boolean;
+  clientsFolderId?:string;
+  clientFolderId?:string;
+  templateVersion?:string;
+  tabsVerified?:string[];
 }
 
 export type ReporterType =
@@ -244,6 +248,8 @@ export interface ReporterRecord {
  * A reporter can have many coverage records.
  */
 export interface CoverageRecord {
+  titleNeedsReview?:boolean;
+  titleReviewReason?:string;
   id: string;
 
   clientId: string;

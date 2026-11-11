@@ -77,7 +77,12 @@ const coverageWorkflow: CoverageWorkflow = new CoverageWorkflow(path.dirname(sto
   const approved=Object.entries(config?.coverageDestinations??{}).filter(([name])=>[client,identity?.id,...(identity?.aliases??[])].some(value=>value && normalized(value)===normalized(name)));
   if(approved.length>1 && new Set(approved.map(([,v])=>JSON.stringify(v))).size>1) throw new Error('Multiple approved coverage destinations for this client; configuration needs attention');
   const mapping=approved[0]?.[1];
-  return workspace.syncCleanCoverage(client, records, (typeof mapping==='string'?mapping:mapping?.spreadsheetId) || destination, persist, coverageWorkflow.state.generation, typeof mapping==='object'?mapping.tab:undefined);
+  const snapshot=store.snapshot;
+  let reporters=snapshot.reporters.filter(r=>r.status==='Active'),outlets:Awaited<ReturnType<GoogleWorkspace['loadOutlets']>>=[];
+  const root=await workspace.inspectRoot();
+  if(root.reporterSheet) {try {reporters=await workspace.loadReporters(root.reporterSheet);}catch(error){console.warn('[COVERAGE] Verified reporter emails unavailable; leaving unmatched fields blank');reporters=[];}}
+  if(root.outletSheet) {try {outlets=await workspace.loadOutlets(root.outletSheet);}catch(error){console.warn('[COVERAGE] Verified outlet metadata unavailable; retaining original PRCC reach only');}}
+  return workspace.syncCleanCoverage(client, records, (typeof mapping==='string'?mapping:mapping?.spreadsheetId) || destination, persist, coverageWorkflow.state.generation, undefined,{reporters,outlets,clientContacts:snapshot.clientContacts,teamContacts:snapshot.teamContacts});
 });
 if (process.env.VERCEL !== '1') {
   await coverageWorkflow.load({readOnly:reporterPreflightReadOnly});
